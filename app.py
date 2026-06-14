@@ -1,75 +1,59 @@
 import streamlit as st
 import urllib.parse
-from streamlit_js_eval import get_geolocation
+import streamlit.components.v1 as components
 
-st.set_page_config(
-    page_title="GOBENG",
-    page_icon="🏍️",
-    layout="centered"
-)
+st.set_page_config(page_title="GOBENG", page_icon="🏍️", layout="centered")
 
 NOMOR_WA = "628562287257"
 
 st.title("🏍️ GOBENG")
 st.subheader("Motor Mogok? GOBENG Aja!")
 st.write("Layanan Tambal Ban & Bengkel Panggilan")
-
 st.markdown("---")
 
 nama = st.text_input("Nama Pelanggan")
 hp = st.text_input("Nomor HP")
-
-kendaraan = st.selectbox(
-    "Jenis Kendaraan",
-    ["Motor", "Mobil"]
-)
-
-layanan = st.selectbox(
-    "Pilih Layanan",
-    [
-        "Tambal Ban",
-        "Motor Mogok",
-        "Ganti Oli",
-        "Servis Ringan",
-        "Isi Angin",
-        "Ganti Busi",
-        "Aki Soak"
-    ]
-)
-
+kendaraan = st.selectbox("Jenis Kendaraan", ["Motor", "Mobil"])
+layanan = st.selectbox("Pilih Layanan", ["Tambal Ban", "Motor Mogok", "Ganti Oli", "Servis Ringan", "Isi Angin", "Ganti Busi", "Aki Soak"])
 alamat = st.text_area("Alamat Lengkap")
 patokan = st.text_input("Patokan Lokasi")
 
-st.markdown("### 📍 Lokasi Pelanggan")
-st.info("Klik tombol di bawah, lalu izinkan akses lokasi. Link Google Maps akan otomatis dibuat.")
+st.markdown("### 📍 Ambil Lokasi Otomatis")
+components.html("""
+<button onclick="getLocation()" style="font-size:18px;padding:12px;border-radius:10px;">
+📍 Ambil Lokasi Saya
+</button>
+<p id="lokasi"></p>
+<script>
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(showPosition, showError);
+  } else {
+    document.getElementById("lokasi").innerHTML = "Browser tidak mendukung GPS.";
+  }
+}
+function showPosition(position) {
+  var lat = position.coords.latitude;
+  var lon = position.coords.longitude;
+  var link = "https://maps.google.com/?q=" + lat + "," + lon;
+  document.getElementById("lokasi").innerHTML =
+    "Salin link lokasi ini:<br><b>" + link + "</b>";
+}
+function showError(error) {
+  document.getElementById("lokasi").innerHTML =
+    "Lokasi gagal terbaca. Pastikan izin lokasi aktif.";
+}
+</script>
+""", height=160)
 
-lokasi_link = ""
-
-if st.button("📍 Ambil Lokasi Saya"):
-    lokasi = get_geolocation()
-
-    if lokasi:
-        lat = lokasi["coords"]["latitude"]
-        lon = lokasi["coords"]["longitude"]
-        lokasi_link = f"https://maps.google.com/?q={lat},{lon}"
-
-        st.session_state["lokasi_link"] = lokasi_link
-        st.success("Lokasi berhasil didapatkan.")
-        st.write(lokasi_link)
-    else:
-        st.warning("Lokasi belum terbaca. Pastikan izin lokasi di browser sudah diaktifkan.")
-
-if "lokasi_link" not in st.session_state:
-    st.session_state["lokasi_link"] = ""
-
-link_lokasi = st.session_state["lokasi_link"]
+link_lokasi = st.text_input("Tempel link lokasi dari tombol di atas")
 
 keluhan = st.text_area("Keluhan Kendaraan")
 
 harga = {
     "Tambal Ban": "Mulai Rp15.000",
     "Motor Mogok": "Mulai Rp30.000",
-    "Ganti Oli": "Mulai Rp20.000 jasa saja",
+    "Ganti Oli": "Mulai Rp7.000 jasa saja",
     "Servis Ringan": "Mulai Rp35.000",
     "Isi Angin": "Mulai Rp5.000",
     "Ganti Busi": "Mulai Rp15.000 jasa saja",
@@ -98,7 +82,6 @@ Keluhan: {keluhan}
 Mohon bantuan teknisi Joni datang ke lokasi.
 """
         link = f"https://wa.me/{NOMOR_WA}?text={urllib.parse.quote(pesan)}"
-
         st.success("Data siap dikirim ke WhatsApp Teknisi Joni.")
         st.markdown(f"### [➡ Hubungi Teknisi Joni]({link})")
     else:
