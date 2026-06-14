@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 import os
 
-st.set_page_config(page_title="GOBENG V3", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="GOBENG V4", page_icon="🏍️", layout="centered")
 
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
@@ -28,8 +28,7 @@ def ongkos_panggilan(jarak):
         return "Rp5.000"
     elif jarak <= 10:
         return "Rp10.000"
-    else:
-        return "Menyesuaikan jarak"
+    return "Menyesuaikan jarak"
 
 def simpan_order(data):
     df_baru = pd.DataFrame([data])
@@ -40,26 +39,34 @@ def simpan_order(data):
         df = df_baru
     df.to_csv(FILE_ORDER, index=False)
 
-def update_status(order_id, status_baru):
+def baca_order():
     if os.path.exists(FILE_ORDER):
-        df = pd.read_csv(FILE_ORDER)
+        return pd.read_csv(FILE_ORDER)
+    return pd.DataFrame()
+
+def update_order(order_id, status_baru, biaya_final, rating, ulasan):
+    df = baca_order()
+    if not df.empty:
         df.loc[df["Order ID"] == order_id, "Status"] = status_baru
+        df.loc[df["Order ID"] == order_id, "Biaya Final"] = biaya_final
+        df.loc[df["Order ID"] == order_id, "Rating"] = rating
+        df.loc[df["Order ID"] == order_id, "Ulasan"] = ulasan
         df.to_csv(FILE_ORDER, index=False)
 
 st.markdown("""
 <style>
-.stApp { background: #f6f7fb; }
-.block-container { max-width: 820px; padding-top: 25px; }
+.stApp { background: #f5f6fa; }
+.block-container { max-width: 850px; padding-top: 25px; }
 .hero {
-    background: linear-gradient(135deg, #d90000, #ff3b3b);
-    padding: 30px;
-    border-radius: 24px;
+    background: linear-gradient(135deg, #d60000, #ff4040);
+    padding: 32px;
+    border-radius: 26px;
     color: white;
     text-align: center;
-    box-shadow: 0 10px 28px rgba(230,0,0,0.25);
+    box-shadow: 0 10px 30px rgba(230,0,0,0.25);
 }
-.hero h1 { font-size: 44px; margin: 0; }
-.hero p { font-size: 17px; margin-top: 8px; }
+.hero h1 { font-size: 46px; margin: 0; }
+.hero p { font-size: 18px; margin-top: 8px; }
 .card {
     background: white;
     padding: 18px;
@@ -68,14 +75,6 @@ st.markdown("""
     box-shadow: 0 5px 18px rgba(0,0,0,0.06);
     border: 1px solid #eeeeee;
 }
-.danger {
-    background: #111111;
-    color: white;
-    padding: 18px;
-    border-radius: 18px;
-    margin-top: 16px;
-    text-align: center;
-}
 .service {
     background: #fff4f4;
     padding: 12px;
@@ -83,48 +82,55 @@ st.markdown("""
     margin: 6px 0;
     border: 1px solid #ffd0d0;
 }
+.danger {
+    background: #111;
+    color: white;
+    padding: 18px;
+    border-radius: 18px;
+    text-align: center;
+    margin-top: 16px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="hero">
-    <h1>🏍️ GOBENG V3</h1>
+    <h1>🏍️ GOBENG V4</h1>
     <p>Bengkel Panggilan Online • Cepat • Praktis • Terpercaya</p>
 </div>
 """, unsafe_allow_html=True)
 
-menu = st.sidebar.radio(
-    "Menu GOBENG",
-    ["Pesan Layanan", "Dashboard Admin"]
-)
+menu = st.sidebar.radio("Menu GOBENG", ["Pesan Layanan", "Dashboard Admin"])
 
 if menu == "Pesan Layanan":
+    st.success("🔥 Promo GOBENG: Tambal ban mulai Rp15.000. Biaya panggilan menyesuaikan jarak.")
+
     st.markdown("""
-    <div class="card">
-    <b>Motor mogok? Ban bocor?</b><br>
-    GOBENG siap membantu Anda dengan teknisi panggilan langsung ke lokasi.
-    </div>
-    """, unsafe_allow_html=True)
+<div class="card">
+<b>Kenapa pilih GOBENG?</b><br>
+⭐ Rating pelayanan 4.9<br>
+⚡ Respon cepat<br>
+📍 Datang ke lokasi pelanggan<br>
+🔧 Teknisi berpengalaman
+</div>
+""", unsafe_allow_html=True)
 
     pesan_darurat = """
 Halo GOBENG
 
 Saya butuh bantuan DARURAT.
-
 Motor mogok / kendaraan bermasalah.
 Mohon teknisi Joni segera merespons.
-
 Saya akan kirim lokasi lewat WhatsApp.
 """
     link_darurat = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan_darurat)}"
 
-    st.markdown(f"""
-    <div class="danger">
-    <h3>🚨 Darurat Motor Mogok?</h3>
-    <p>Klik tombol di bawah untuk langsung menghubungi teknisi.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("""
+<div class="danger">
+<h3>🚨 Darurat Motor Mogok?</h3>
+<p>Klik tombol di bawah untuk langsung menghubungi teknisi.</p>
+</div>
+""", unsafe_allow_html=True)
     st.markdown(f"### [🚨 HUBUNGI JONI SEKARANG]({link_darurat})")
 
     st.markdown("### 📞 Bantuan & Pengaduan")
@@ -185,7 +191,10 @@ Saya akan kirim lokasi lewat WhatsApp.
                 "Patokan": patokan,
                 "Keluhan": keluhan,
                 "Foto": status_foto,
-                "Status": "Menunggu Teknisi"
+                "Status": "Menunggu Teknisi",
+                "Biaya Final": 0,
+                "Rating": 0,
+                "Ulasan": ""
             }
 
             simpan_order(data_order)
@@ -224,37 +233,49 @@ Mohon bantuan teknisi Joni datang ke lokasi.
             st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
 if menu == "Dashboard Admin":
-    st.markdown("### 🔐 Dashboard Admin GOBENG V3")
+    st.markdown("### 🔐 Dashboard Admin GOBENG V4")
     password = st.text_input("Masukkan Password Admin", type="password")
 
     if password == PASSWORD_ADMIN:
         st.success("Login admin berhasil.")
+        df = baca_order()
 
-        if os.path.exists(FILE_ORDER):
-            df = pd.read_csv(FILE_ORDER)
+        if not df.empty:
+            if "Biaya Final" not in df.columns:
+                df["Biaya Final"] = 0
+            if "Rating" not in df.columns:
+                df["Rating"] = 0
+            if "Ulasan" not in df.columns:
+                df["Ulasan"] = ""
 
             total_order = len(df)
-            menunggu = len(df[df["Status"] == "Menunggu Teknisi"])
-            berangkat = len(df[df["Status"] == "Teknisi Berangkat"])
-            dikerjakan = len(df[df["Status"] == "Sedang Dikerjakan"])
+            order_hari_ini = len(df[df["Waktu"].astype(str).str.startswith(datetime.now().strftime("%Y-%m-%d"))])
             selesai = len(df[df["Status"] == "Selesai"])
+            pendapatan = int(pd.to_numeric(df["Biaya Final"], errors="coerce").fillna(0).sum())
+            rata_rating = pd.to_numeric(df["Rating"], errors="coerce").replace(0, pd.NA).dropna().mean()
 
             col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Total", total_order)
-            col2.metric("Menunggu", menunggu)
-            col3.metric("Berangkat", berangkat)
-            col4.metric("Selesai", selesai)
+            col1.metric("Total Order", total_order)
+            col2.metric("Order Hari Ini", order_hari_ini)
+            col3.metric("Selesai", selesai)
+            col4.metric("Pendapatan", f"Rp{pendapatan:,.0f}".replace(",", "."))
 
-            st.markdown("### 🔄 Ubah Status Order")
+            if pd.notna(rata_rating):
+                st.success(f"⭐ Rating rata-rata: {rata_rating:.1f}/5")
+
+            st.markdown("### 🔄 Update Order")
             order_pilih = st.selectbox("Pilih Order ID", df["Order ID"].tolist())
             status_baru = st.selectbox(
                 "Status Baru",
                 ["Menunggu Teknisi", "Teknisi Berangkat", "Sedang Dikerjakan", "Selesai", "Batal"]
             )
+            biaya_final = st.number_input("Total Tagihan / Biaya Final", min_value=0, step=1000)
+            rating = st.slider("Rating Pelanggan", 0, 5, 0)
+            ulasan = st.text_area("Ulasan Pelanggan")
 
-            if st.button("Simpan Status"):
-                update_status(order_pilih, status_baru)
-                st.success(f"Status {order_pilih} diubah menjadi {status_baru}. Silakan refresh halaman.")
+            if st.button("Simpan Update Order", use_container_width=True):
+                update_order(order_pilih, status_baru, biaya_final, rating, ulasan)
+                st.success("Update order berhasil. Refresh halaman untuk melihat perubahan.")
 
             st.markdown("### 📋 Riwayat Order")
             st.dataframe(df, use_container_width=True)
