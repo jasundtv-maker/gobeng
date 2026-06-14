@@ -5,20 +5,22 @@ import pandas as pd
 import os
 import requests
 
-st.set_page_config(page_title="GOBENG V2.2", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="GOBENG", page_icon="🏍️", layout="centered")
 
 # ================== KONFIGURASI ==================
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
 
-BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
+BOT_TOKEN = "ISI_TOKEN_TELEGRAM_BARU_ANDA"
 CHAT_ID_OWNER = "8951538688"
 
 FILE_ORDER = "orders.csv"
 STATUS_FILE = "status_joni.txt"
 PASSWORD_ADMIN = "joni123"
 
-# ================== DATA HARGA ==================
+MITRA_UTAMA = "JASUN MOTOR"
+NAMA_PLATFORM = "GOBENG"
+
 harga = {
     "Tambal Ban": "Mulai Rp15.000",
     "Motor Mogok": "Mulai Rp20.000",
@@ -29,7 +31,6 @@ harga = {
     "Aki Soak": "Menyesuaikan kondisi kendaraan",
 }
 
-# ================== FUNGSI ==================
 def ongkos_panggilan(jarak):
     if jarak <= 3:
         return "Gratis panggilan"
@@ -58,33 +59,22 @@ def simpan_order(data):
     df.to_csv(FILE_ORDER, index=False)
 
 def update_order(order_id, status_baru, biaya_final, rating, ulasan):
-
     df = baca_order()
-
     if df.empty:
         return
 
     if "Biaya Final" not in df.columns:
         df["Biaya Final"] = 0
-
     if "Rating" not in df.columns:
         df["Rating"] = 0
-
     if "Ulasan" not in df.columns:
         df["Ulasan"] = ""
 
     df["Order ID"] = df["Order ID"].astype(str)
     df["Status"] = df["Status"].astype(str)
-
-    df["Biaya Final"] = pd.to_numeric(
-        df["Biaya Final"], errors="coerce"
-    ).fillna(0)
-
-    df["Rating"] = pd.to_numeric(
-        df["Rating"], errors="coerce"
-    ).fillna(0)
-
-    df["Ulasan"] = df["Ulasan"].astype(str)
+    df["Ulasan"] = df["Ulasan"].fillna("").astype(str)
+    df["Biaya Final"] = pd.to_numeric(df["Biaya Final"], errors="coerce").fillna(0)
+    df["Rating"] = pd.to_numeric(df["Rating"], errors="coerce").fillna(0)
 
     mask = df["Order ID"] == str(order_id)
 
@@ -110,8 +100,7 @@ def simpan_status_joni(status):
 st.markdown("""
 <style>
 .stApp { background: #f5f6fa; }
-.block-container { max-width: 880px; padding-top: 25px; }
-
+.block-container { max-width: 900px; padding-top: 25px; }
 .hero {
     background: linear-gradient(135deg, #d60000, #ff4040);
     padding: 32px;
@@ -122,7 +111,6 @@ st.markdown("""
 }
 .hero h1 { font-size: 46px; margin: 0; }
 .hero p { font-size: 18px; margin-top: 8px; }
-
 .card {
     background: white;
     padding: 18px;
@@ -149,11 +137,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================== HEADER ==================
 st.markdown("""
 <div class="hero">
     <h1>🏍️ GOBENG</h1>
-    <p>Bengkel Panggilan Online • Cepat • Praktis • Terpercaya</p>
+    <p>Platform Bengkel Panggilan Online</p>
+    <p>Menghubungkan pelanggan dengan mitra bengkel terdekat</p>
+    <p><b>Powered by JASUN MOTOR</b></p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -164,9 +153,9 @@ if menu == "Pesan Layanan":
     status_joni = baca_status_joni()
 
     if status_joni == "ONLINE":
-        st.success("🟢 Teknisi Joni Sedang Online")
+        st.success("🟢 Teknisi Joni dari JASUN MOTOR Sedang Online")
     else:
-        st.error("🔴 Teknisi Joni Sedang Offline")
+        st.error("🔴 Teknisi Joni dari JASUN MOTOR Sedang Offline")
 
     st.info("""
 🕒 Jam Operasional  
@@ -184,7 +173,14 @@ Senin - Minggu: 07:00 - 22:00
 ✅ Sukaluyu
 """)
 
-    st.success("🔥 Promo GOBENG: Tambal ban mulai Rp15.000. Biaya panggilan menyesuaikan jarak.")
+    st.markdown("""
+<div class="card">
+<b>Tentang GOBENG</b><br>
+GOBENG adalah platform bengkel panggilan online yang menghubungkan pelanggan dengan mitra bengkel terpercaya.<br><br>
+🔧 Mitra Bengkel Utama: <b>JASUN MOTOR</b><br>
+👨‍🔧 Teknisi Lapangan: <b>Joni</b>
+</div>
+""", unsafe_allow_html=True)
 
     st.markdown("""
 <div class="card">
@@ -197,12 +193,15 @@ Senin - Minggu: 07:00 - 22:00
 </div>
 """, unsafe_allow_html=True)
 
-    pesan_darurat = """
+    pesan_darurat = f"""
 Halo GOBENG
 
 Saya butuh bantuan DARURAT.
 Motor mogok / kendaraan bermasalah.
+
+Mitra Bengkel: {MITRA_UTAMA}
 Mohon teknisi Joni segera merespons.
+
 Saya akan kirim lokasi lewat WhatsApp.
 """
     link_darurat = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan_darurat)}"
@@ -210,7 +209,7 @@ Saya akan kirim lokasi lewat WhatsApp.
     st.markdown("""
 <div class="danger">
 <h3>🚨 Darurat Motor Mogok?</h3>
-<p>Klik tombol di bawah untuk langsung menghubungi teknisi.</p>
+<p>Klik tombol di bawah untuk langsung menghubungi teknisi JASUN MOTOR.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -218,8 +217,9 @@ Saya akan kirim lokasi lewat WhatsApp.
 
     st.markdown("### 📞 Bantuan & Pengaduan")
     st.info("""
-👨‍🔧 Teknisi Lapangan: Joni — 0856-2287-257  
-👨‍💼 Bantuan / Owner GOBENG: 0813-9544-0454
+📞 Customer Service GOBENG: 0813-9544-0454  
+🔧 Mitra Bengkel Utama: JASUN MOTOR  
+👨‍🔧 Teknisi Lapangan: Joni — 0856-2287-257
 """)
 
     st.markdown("### 🔧 Layanan Tersedia")
@@ -272,6 +272,9 @@ Saya akan kirim lokasi lewat WhatsApp.
                 "No Antrian": nomor_antrian,
                 "Order ID": order_id,
                 "Waktu": waktu,
+                "Platform": NAMA_PLATFORM,
+                "Mitra Bengkel": MITRA_UTAMA,
+                "Teknisi": "Joni",
                 "Nama": nama,
                 "HP": hp,
                 "Kendaraan": kendaraan,
@@ -298,6 +301,10 @@ Halo GOBENG
 NO ANTRIAN: {nomor_antrian}
 ORDER ID: {order_id}
 
+Platform: {NAMA_PLATFORM}
+Mitra Bengkel: {MITRA_UTAMA}
+Teknisi: Joni
+
 Saya ingin panggil teknisi.
 
 Nama: {nama}
@@ -322,7 +329,7 @@ Keluhan:
 
 Foto Kerusakan: {status_foto}
 
-Mohon bantuan teknisi Joni datang ke lokasi.
+Mohon bantuan teknisi Joni dari JASUN MOTOR datang ke lokasi.
 """
 
             notif_telegram = f"""
@@ -331,6 +338,10 @@ Mohon bantuan teknisi Joni datang ke lokasi.
 🔢 No Antrian: {nomor_antrian}
 🆔 Order ID: {order_id}
 ⏰ Waktu: {waktu}
+
+🏢 Platform: {NAMA_PLATFORM}
+🔧 Mitra Bengkel: {MITRA_UTAMA}
+👨‍🔧 Teknisi: Joni
 
 👤 Nama: {nama}
 📱 HP/WA: {hp}
@@ -369,8 +380,8 @@ Status Order: Menunggu Teknisi
             if maps_link:
                 st.markdown(f"### [🗺️ BUKA LOKASI DI GOOGLE MAPS]({maps_link})")
 
-            st.markdown(f"### [➡ KIRIM ORDER KE JONI]({link_joni})")
-            st.markdown(f"### [📩 KIRIM SALINAN KE OWNER]({link_owner})")
+            st.markdown(f"### [➡ KIRIM ORDER KE JONI / JASUN MOTOR]({link_joni})")
+            st.markdown(f"### [📩 KIRIM SALINAN KE OWNER GOBENG]({link_owner})")
         else:
             st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
@@ -382,7 +393,7 @@ if menu == "Dashboard Admin":
     if password == PASSWORD_ADMIN:
         st.success("Login admin berhasil.")
 
-        st.markdown("### 👨‍🔧 Status Teknisi Joni")
+        st.markdown("### 👨‍🔧 Status Teknisi Joni - JASUN MOTOR")
         status_joni = baca_status_joni()
 
         status_baru_joni = st.radio(
@@ -398,9 +409,18 @@ if menu == "Dashboard Admin":
         df = baca_order()
 
         if not df.empty:
-            for col in ["Biaya Final", "Rating", "Ulasan", "Google Maps", "No Antrian"]:
+            for col in ["Biaya Final", "Rating", "Ulasan", "Google Maps", "No Antrian", "Mitra Bengkel", "Platform", "Teknisi"]:
                 if col not in df.columns:
-                    df[col] = 0 if col in ["Biaya Final", "Rating", "No Antrian"] else ""
+                    if col in ["Biaya Final", "Rating", "No Antrian"]:
+                        df[col] = 0
+                    elif col == "Mitra Bengkel":
+                        df[col] = MITRA_UTAMA
+                    elif col == "Platform":
+                        df[col] = NAMA_PLATFORM
+                    elif col == "Teknisi":
+                        df[col] = "Joni"
+                    else:
+                        df[col] = ""
 
             total_order = len(df)
             order_hari_ini = len(df[df["Waktu"].astype(str).str.startswith(datetime.now().strftime("%Y-%m-%d"))])
@@ -433,7 +453,7 @@ if menu == "Dashboard Admin":
 
             st.markdown("### 🗺️ Navigasi Order")
             if "Google Maps" in df.columns:
-                df_maps = df[["Order ID", "Nama", "Layanan", "Google Maps", "Status"]]
+                df_maps = df[["Order ID", "Nama", "Layanan", "Mitra Bengkel", "Google Maps", "Status"]]
                 st.dataframe(df_maps, use_container_width=True)
 
             st.markdown("### 📋 Riwayat Order")
@@ -452,4 +472,4 @@ if menu == "Dashboard Admin":
         st.error("Password salah.")
 
 st.markdown("---")
-st.caption("© GOBENG - Bengkel Panggilan Online")
+st.caption("© GOBENG - Platform Bengkel Panggilan Online | Mitra Utama: JASUN MOTOR")
