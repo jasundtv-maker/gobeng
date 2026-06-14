@@ -61,6 +61,9 @@ def update_order(order_id, status_baru, biaya_final, rating, ulasan):
 
     df = baca_order()
 
+    if df.empty:
+        return
+
     if "Biaya Final" not in df.columns:
         df["Biaya Final"] = 0
 
@@ -70,10 +73,25 @@ def update_order(order_id, status_baru, biaya_final, rating, ulasan):
     if "Ulasan" not in df.columns:
         df["Ulasan"] = ""
 
-    df.loc[df["Order ID"] == order_id, "Status"] = status_baru
-    df.loc[df["Order ID"] == order_id, "Biaya Final"] = biaya_final
-    df.loc[df["Order ID"] == order_id, "Rating"] = rating
-    df.loc[df["Order ID"] == order_id, "Ulasan"] = ulasan
+    df["Order ID"] = df["Order ID"].astype(str)
+    df["Status"] = df["Status"].astype(str)
+
+    df["Biaya Final"] = pd.to_numeric(
+        df["Biaya Final"], errors="coerce"
+    ).fillna(0)
+
+    df["Rating"] = pd.to_numeric(
+        df["Rating"], errors="coerce"
+    ).fillna(0)
+
+    df["Ulasan"] = df["Ulasan"].astype(str)
+
+    mask = df["Order ID"] == str(order_id)
+
+    df.loc[mask, "Status"] = str(status_baru)
+    df.loc[mask, "Biaya Final"] = int(biaya_final)
+    df.loc[mask, "Rating"] = int(rating)
+    df.loc[mask, "Ulasan"] = str(ulasan)
 
     df.to_csv(FILE_ORDER, index=False)
 
