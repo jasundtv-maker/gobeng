@@ -3,11 +3,16 @@ import urllib.parse
 from datetime import datetime
 import pandas as pd
 import os
+import requests
 
-st.set_page_config(page_title="GOBENG V4", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="GOBENG V5", page_icon="🏍️", layout="centered")
 
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
+
+BOT_TOKEN = "8742663611:AAFxqT7hOaBXgxex1Bkn4mnM40zPWp_eLO8"
+CHAT_ID_OWNER = "8951538688"
+
 FILE_ORDER = "orders.csv"
 PASSWORD_ADMIN = "joni123"
 
@@ -29,6 +34,17 @@ def ongkos_panggilan(jarak):
     elif jarak <= 10:
         return "Rp10.000"
     return "Menyesuaikan jarak"
+
+def kirim_telegram(pesan):
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        data = {
+            "chat_id": CHAT_ID_OWNER,
+            "text": pesan
+        }
+        requests.post(url, data=data, timeout=10)
+    except Exception as e:
+        print("Gagal kirim Telegram:", e)
 
 def simpan_order(data):
     df_baru = pd.DataFrame([data])
@@ -95,7 +111,7 @@ st.markdown("""
 
 st.markdown("""
 <div class="hero">
-    <h1>🏍️ GOBENG V4</h1>
+    <h1>🏍️ GOBENG V5</h1>
     <p>Bengkel Panggilan Online • Cepat • Praktis • Terpercaya</p>
 </div>
 """, unsafe_allow_html=True)
@@ -111,7 +127,8 @@ if menu == "Pesan Layanan":
 ⭐ Rating pelayanan 4.9<br>
 ⚡ Respon cepat<br>
 📍 Datang ke lokasi pelanggan<br>
-🔧 Teknisi berpengalaman
+🔧 Teknisi berpengalaman<br>
+🔔 Owner menerima notifikasi Telegram otomatis
 </div>
 """, unsafe_allow_html=True)
 
@@ -131,6 +148,7 @@ Saya akan kirim lokasi lewat WhatsApp.
 <p>Klik tombol di bawah untuk langsung menghubungi teknisi.</p>
 </div>
 """, unsafe_allow_html=True)
+
     st.markdown(f"### [🚨 HUBUNGI JONI SEKARANG]({link_darurat})")
 
     st.markdown("### 📞 Bantuan & Pengaduan")
@@ -223,17 +241,50 @@ Saya akan mengirim share location lewat WhatsApp setelah ini.
 
 Mohon bantuan teknisi Joni datang ke lokasi.
 """
+
+            notif_telegram = f"""
+🔔 ORDER BARU GOBENG
+
+🆔 Order ID: {order_id}
+⏰ Waktu: {waktu}
+
+👤 Nama: {nama}
+📱 HP/WA: {hp}
+🏍️ Kendaraan: {kendaraan}
+🔧 Layanan: {layanan}
+
+💰 Estimasi Jasa: {harga[layanan]}
+📍 Jarak: {jarak} KM
+🚚 Ongkos Panggilan: {biaya_panggilan}
+
+🏠 Alamat:
+{alamat}
+
+📌 Patokan:
+{patokan}
+
+🛠️ Keluhan:
+{keluhan}
+
+📷 Foto: {status_foto}
+
+Status: Menunggu Teknisi
+"""
+
+            kirim_telegram(notif_telegram)
+
             link_joni = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan)}"
             link_owner = f"https://wa.me/{NOMOR_WA_OWNER}?text={urllib.parse.quote('Salinan order GOBENG:\\n' + pesan)}"
 
             st.success(f"Order berhasil dibuat: {order_id}")
+            st.success("Notifikasi Telegram otomatis dikirim ke Owner.")
             st.markdown(f"### [➡ KIRIM ORDER KE JONI]({link_joni})")
             st.markdown(f"### [📩 KIRIM SALINAN KE OWNER]({link_owner})")
         else:
             st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
 if menu == "Dashboard Admin":
-    st.markdown("### 🔐 Dashboard Admin GOBENG V4")
+    st.markdown("### 🔐 Dashboard Admin GOBENG V5")
     password = st.text_input("Masukkan Password Admin", type="password")
 
     if password == PASSWORD_ADMIN:
