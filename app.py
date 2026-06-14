@@ -18,8 +18,14 @@ layanan = st.selectbox(
     "Pilih Layanan",
     ["Tambal Ban", "Motor Mogok", "Ganti Oli", "Servis Ringan", "Isi Angin", "Ganti Busi", "Aki Soak"]
 )
+
 alamat = st.text_area("Alamat Lengkap")
 patokan = st.text_input("Patokan Lokasi")
+
+st.info("Buka Google Maps, tekan titik lokasi Anda, lalu salin link lokasinya dan tempel di bawah.")
+
+link_lokasi = st.text_input("Link Lokasi Google Maps")
+
 keluhan = st.text_area("Keluhan Kendaraan")
 
 harga = {
@@ -48,6 +54,7 @@ Layanan: {layanan}
 Estimasi Biaya: {harga[layanan]}
 Alamat: {alamat}
 Patokan: {patokan}
+Lokasi Google Maps: {link_lokasi}
 Keluhan: {keluhan}
 
 Mohon bantuan teknisi Joni datang ke lokasi.
