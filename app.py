@@ -1,11 +1,16 @@
 import streamlit as st
 import urllib.parse
+from streamlit_js_eval import get_geolocation
 
-st.set_page_config(page_title="GOBENG", page_icon="🚗", layout="centered")
+st.set_page_config(
+    page_title="GOBENG",
+    page_icon="🏍️",
+    layout="centered"
+)
 
 NOMOR_WA = "628562287257"
 
-st.title("🚗 GOBENG")
+st.title("🏍️ GOBENG")
 st.subheader("Motor Mogok? GOBENG Aja!")
 st.write("Layanan Tambal Ban & Bengkel Panggilan")
 
@@ -13,18 +18,51 @@ st.markdown("---")
 
 nama = st.text_input("Nama Pelanggan")
 hp = st.text_input("Nomor HP")
-kendaraan = st.selectbox("Jenis Kendaraan", ["Motor", "Mobil"])
+
+kendaraan = st.selectbox(
+    "Jenis Kendaraan",
+    ["Motor", "Mobil"]
+)
+
 layanan = st.selectbox(
     "Pilih Layanan",
-    ["Tambal Ban", "Motor Mogok", "Ganti Oli", "Servis Ringan", "Isi Angin", "Ganti Busi", "Aki Soak"]
+    [
+        "Tambal Ban",
+        "Motor Mogok",
+        "Ganti Oli",
+        "Servis Ringan",
+        "Isi Angin",
+        "Ganti Busi",
+        "Aki Soak"
+    ]
 )
 
 alamat = st.text_area("Alamat Lengkap")
 patokan = st.text_input("Patokan Lokasi")
 
-st.info("Buka Google Maps, tekan titik lokasi Anda, lalu salin link lokasinya dan tempel di bawah.")
+st.markdown("### 📍 Lokasi Pelanggan")
+st.info("Klik tombol di bawah, lalu izinkan akses lokasi. Link Google Maps akan otomatis dibuat.")
 
-link_lokasi = st.text_input("Link Lokasi Google Maps")
+lokasi_link = ""
+
+if st.button("📍 Ambil Lokasi Saya"):
+    lokasi = get_geolocation()
+
+    if lokasi:
+        lat = lokasi["coords"]["latitude"]
+        lon = lokasi["coords"]["longitude"]
+        lokasi_link = f"https://maps.google.com/?q={lat},{lon}"
+
+        st.session_state["lokasi_link"] = lokasi_link
+        st.success("Lokasi berhasil didapatkan.")
+        st.write(lokasi_link)
+    else:
+        st.warning("Lokasi belum terbaca. Pastikan izin lokasi di browser sudah diaktifkan.")
+
+if "lokasi_link" not in st.session_state:
+    st.session_state["lokasi_link"] = ""
+
+link_lokasi = st.session_state["lokasi_link"]
 
 keluhan = st.text_area("Keluhan Kendaraan")
 
