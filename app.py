@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import requests
 
-st.set_page_config(page_title="GOBENG V5", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="GOBENG V6", page_icon="🏍️", layout="centered")
 
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
@@ -38,27 +38,20 @@ def ongkos_panggilan(jarak):
 def kirim_telegram(pesan):
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        data = {
-            "chat_id": CHAT_ID_OWNER,
-            "text": pesan
-        }
-        requests.post(url, data=data, timeout=10)
+        requests.post(url, data={"chat_id": CHAT_ID_OWNER, "text": pesan}, timeout=10)
     except Exception as e:
         print("Gagal kirim Telegram:", e)
-
-def simpan_order(data):
-    df_baru = pd.DataFrame([data])
-    if os.path.exists(FILE_ORDER):
-        df_lama = pd.read_csv(FILE_ORDER)
-        df = pd.concat([df_lama, df_baru], ignore_index=True)
-    else:
-        df = df_baru
-    df.to_csv(FILE_ORDER, index=False)
 
 def baca_order():
     if os.path.exists(FILE_ORDER):
         return pd.read_csv(FILE_ORDER)
     return pd.DataFrame()
+
+def simpan_order(data):
+    df_baru = pd.DataFrame([data])
+    df_lama = baca_order()
+    df = pd.concat([df_lama, df_baru], ignore_index=True) if not df_lama.empty else df_baru
+    df.to_csv(FILE_ORDER, index=False)
 
 def update_order(order_id, status_baru, biaya_final, rating, ulasan):
     df = baca_order()
@@ -72,7 +65,7 @@ def update_order(order_id, status_baru, biaya_final, rating, ulasan):
 st.markdown("""
 <style>
 .stApp { background: #f5f6fa; }
-.block-container { max-width: 850px; padding-top: 25px; }
+.block-container { max-width: 880px; padding-top: 25px; }
 .hero {
     background: linear-gradient(135deg, #d60000, #ff4040);
     padding: 32px;
@@ -111,7 +104,7 @@ st.markdown("""
 
 st.markdown("""
 <div class="hero">
-    <h1>🏍️ GOBENG V5</h1>
+    <h1>🏍️ GOBENG V6</h1>
     <p>Bengkel Panggilan Online • Cepat • Praktis • Terpercaya</p>
 </div>
 """, unsafe_allow_html=True)
@@ -127,7 +120,7 @@ if menu == "Pesan Layanan":
 ⭐ Rating pelayanan 4.9<br>
 ⚡ Respon cepat<br>
 📍 Datang ke lokasi pelanggan<br>
-🔧 Teknisi berpengalaman<br>
+🗺️ Link Google Maps langsung ke teknisi<br>
 🔔 Owner menerima notifikasi Telegram otomatis
 </div>
 """, unsafe_allow_html=True)
@@ -176,7 +169,10 @@ Saya akan kirim lokasi lewat WhatsApp.
 
     alamat = st.text_area("Alamat Lengkap")
     patokan = st.text_input("Patokan Lokasi")
+    maps_link = st.text_input("Link Google Maps Lokasi Pelanggan")
     keluhan = st.text_area("Keluhan Kendaraan")
+
+    st.info("Cara ambil link lokasi: buka Google Maps → pilih lokasi → Bagikan → Salin link → tempel di kolom Link Google Maps.")
 
     foto = st.file_uploader("Upload Foto Kerusakan Kendaraan", type=["jpg", "jpeg", "png"])
     if foto:
@@ -187,15 +183,18 @@ Saya akan kirim lokasi lewat WhatsApp.
     st.success(f"Estimasi jasa: {harga[layanan]}")
     st.info(f"Estimasi ongkos panggilan: {biaya_panggilan}")
     st.warning("Estimasi final akan diinformasikan teknisi sebelum pengerjaan.")
-    st.info("Setelah WhatsApp terbuka, pelanggan bisa langsung mengirim share location kepada teknisi.")
 
     if st.button("📲 PANGGIL TEKNISI SEKARANG", use_container_width=True):
         if nama and hp and alamat and keluhan:
+            df_sekarang = baca_order()
+            nomor_antrian = len(df_sekarang) + 1
+
             order_id = "GB-" + datetime.now().strftime("%Y%m%d-%H%M%S")
             waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             status_foto = "Sudah upload foto kerusakan" if foto else "Belum upload foto"
 
             data_order = {
+                "No Antrian": nomor_antrian,
                 "Order ID": order_id,
                 "Waktu": waktu,
                 "Nama": nama,
@@ -207,6 +206,7 @@ Saya akan kirim lokasi lewat WhatsApp.
                 "Ongkos Panggilan": biaya_panggilan,
                 "Alamat": alamat,
                 "Patokan": patokan,
+                "Google Maps": maps_link,
                 "Keluhan": keluhan,
                 "Foto": status_foto,
                 "Status": "Menunggu Teknisi",
@@ -220,6 +220,7 @@ Saya akan kirim lokasi lewat WhatsApp.
             pesan = f"""
 Halo GOBENG
 
+NO ANTRIAN: {nomor_antrian}
 ORDER ID: {order_id}
 
 Saya ingin panggil teknisi.
@@ -231,20 +232,28 @@ Layanan: {layanan}
 Estimasi Jasa: {harga[layanan]}
 Perkiraan Jarak: {jarak} KM
 Ongkos Panggilan: {biaya_panggilan}
-Alamat: {alamat}
-Patokan: {patokan}
-Keluhan: {keluhan}
-Foto Kerusakan: {status_foto}
 
-Catatan:
-Saya akan mengirim share location lewat WhatsApp setelah ini.
+Alamat:
+{alamat}
+
+Patokan:
+{patokan}
+
+Google Maps:
+{maps_link}
+
+Keluhan:
+{keluhan}
+
+Foto Kerusakan: {status_foto}
 
 Mohon bantuan teknisi Joni datang ke lokasi.
 """
 
             notif_telegram = f"""
-🔔 ORDER BARU GOBENG
+🔔 ORDER BARU GOBENG V6
 
+🔢 No Antrian: {nomor_antrian}
 🆔 Order ID: {order_id}
 ⏰ Waktu: {waktu}
 
@@ -263,6 +272,9 @@ Mohon bantuan teknisi Joni datang ke lokasi.
 📌 Patokan:
 {patokan}
 
+🗺️ Google Maps:
+{maps_link}
+
 🛠️ Keluhan:
 {keluhan}
 
@@ -270,7 +282,6 @@ Mohon bantuan teknisi Joni datang ke lokasi.
 
 Status: Menunggu Teknisi
 """
-
             kirim_telegram(notif_telegram)
 
             link_joni = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan)}"
@@ -278,13 +289,17 @@ Status: Menunggu Teknisi
 
             st.success(f"Order berhasil dibuat: {order_id}")
             st.success("Notifikasi Telegram otomatis dikirim ke Owner.")
+
+            if maps_link:
+                st.markdown(f"### [🗺️ BUKA LOKASI DI GOOGLE MAPS]({maps_link})")
+
             st.markdown(f"### [➡ KIRIM ORDER KE JONI]({link_joni})")
             st.markdown(f"### [📩 KIRIM SALINAN KE OWNER]({link_owner})")
         else:
             st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
 if menu == "Dashboard Admin":
-    st.markdown("### 🔐 Dashboard Admin GOBENG V5")
+    st.markdown("### 🔐 Dashboard Admin GOBENG V6")
     password = st.text_input("Masukkan Password Admin", type="password")
 
     if password == PASSWORD_ADMIN:
@@ -292,12 +307,9 @@ if menu == "Dashboard Admin":
         df = baca_order()
 
         if not df.empty:
-            if "Biaya Final" not in df.columns:
-                df["Biaya Final"] = 0
-            if "Rating" not in df.columns:
-                df["Rating"] = 0
-            if "Ulasan" not in df.columns:
-                df["Ulasan"] = ""
+            for col in ["Biaya Final", "Rating", "Ulasan", "Google Maps", "No Antrian"]:
+                if col not in df.columns:
+                    df[col] = 0 if col in ["Biaya Final", "Rating", "No Antrian"] else ""
 
             total_order = len(df)
             order_hari_ini = len(df[df["Waktu"].astype(str).str.startswith(datetime.now().strftime("%Y-%m-%d"))])
@@ -327,6 +339,10 @@ if menu == "Dashboard Admin":
             if st.button("Simpan Update Order", use_container_width=True):
                 update_order(order_pilih, status_baru, biaya_final, rating, ulasan)
                 st.success("Update order berhasil. Refresh halaman untuk melihat perubahan.")
+
+            st.markdown("### 🗺️ Navigasi Order")
+            df_maps = df[["Order ID", "Nama", "Layanan", "Google Maps", "Status"]]
+            st.dataframe(df_maps, use_container_width=True)
 
             st.markdown("### 📋 Riwayat Order")
             st.dataframe(df, use_container_width=True)
