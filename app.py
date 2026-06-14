@@ -53,7 +53,7 @@ keluhan = st.text_area("Keluhan Kendaraan")
 harga = {
     "Tambal Ban": "Mulai Rp15.000",
     "Motor Mogok": "Mulai Rp30.000",
-    "Ganti Oli": "Mulai Rp7.000 jasa saja",
+    "Ganti Oli": "Mulai Rp20.000 jasa saja",
     "Servis Ringan": "Mulai Rp35.000",
     "Isi Angin": "Mulai Rp5.000",
     "Ganti Busi": "Mulai Rp15.000 jasa saja",
