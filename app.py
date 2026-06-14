@@ -5,21 +5,16 @@ import pandas as pd
 import os
 import requests
 
-st.set_page_config(page_title="GOBENG", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="GOBENG V7", page_icon="🏍️", layout="centered")
 
-# ================== KONFIGURASI ==================
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
 
-BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
-CHAT_ID_OWNER = "8951538688"
+BOT_TOKEN = ""
+CHAT_ID_OWNER = ""
 
 FILE_ORDER = "orders.csv"
-STATUS_FILE = "status_joni.txt"
 PASSWORD_ADMIN = "joni123"
-
-MITRA_UTAMA = "JASUN MOTOR"
-NAMA_PLATFORM = "GOBENG"
 
 harga = {
     "Tambal Ban": "Mulai Rp15.000",
@@ -40,77 +35,55 @@ def ongkos_panggilan(jarak):
         return "Rp10.000"
     return "Menyesuaikan jarak"
 
-def kirim_telegram(pesan):
-    try:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        requests.post(url, data={"chat_id": CHAT_ID_OWNER, "text": pesan}, timeout=10)
-    except Exception as e:
-        print("Gagal kirim Telegram:", e)
+def simpan_order(data):
+    df_baru = pd.DataFrame([data])
+    if os.path.exists(FILE_ORDER):
+        df_lama = pd.read_csv(FILE_ORDER)
+        df = pd.concat([df_lama, df_baru], ignore_index=True)
+    else:
+        df = df_baru
+    df.to_csv(FILE_ORDER, index=False)
 
 def baca_order():
     if os.path.exists(FILE_ORDER):
         return pd.read_csv(FILE_ORDER)
     return pd.DataFrame()
 
-def simpan_order(data):
-    df_baru = pd.DataFrame([data])
-    df_lama = baca_order()
-    df = pd.concat([df_lama, df_baru], ignore_index=True) if not df_lama.empty else df_baru
-    df.to_csv(FILE_ORDER, index=False)
-
 def update_order(order_id, status_baru, biaya_final, rating, ulasan):
     df = baca_order()
-    if df.empty:
-        return
+    if not df.empty:
+        df.loc[df["Order ID"] == order_id, "Status"] = status_baru
+        df.loc[df["Order ID"] == order_id, "Biaya Final"] = biaya_final
+        df.loc[df["Order ID"] == order_id, "Rating"] = rating
+        df.loc[df["Order ID"] == order_id, "Ulasan"] = ulasan
+        df.to_csv(FILE_ORDER, index=False)
 
-    if "Biaya Final" not in df.columns:
-        df["Biaya Final"] = 0
-    if "Rating" not in df.columns:
-        df["Rating"] = 0
-    if "Ulasan" not in df.columns:
-        df["Ulasan"] = ""
+def kirim_telegram(pesan):
+    if BOT_TOKEN and CHAT_ID_OWNER:
+        try:
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            data = {
+                "chat_id": CHAT_ID_OWNER,
+                "text": pesan,
+                "parse_mode": "HTML"
+            }
+            requests.post(url, data=data, timeout=10)
+        except Exception:
+            pass
 
-    df["Order ID"] = df["Order ID"].astype(str)
-    df["Status"] = df["Status"].astype(str)
-    df["Ulasan"] = df["Ulasan"].fillna("").astype(str)
-    df["Biaya Final"] = pd.to_numeric(df["Biaya Final"], errors="coerce").fillna(0)
-    df["Rating"] = pd.to_numeric(df["Rating"], errors="coerce").fillna(0)
-
-    mask = df["Order ID"] == str(order_id)
-
-    df.loc[mask, "Status"] = str(status_baru)
-    df.loc[mask, "Biaya Final"] = int(biaya_final)
-    df.loc[mask, "Rating"] = int(rating)
-    df.loc[mask, "Ulasan"] = str(ulasan)
-
-    df.to_csv(FILE_ORDER, index=False)
-
-def baca_status_joni():
-    if not os.path.exists(STATUS_FILE):
-        with open(STATUS_FILE, "w") as f:
-            f.write("ONLINE")
-    with open(STATUS_FILE, "r") as f:
-        return f.read().strip()
-
-def simpan_status_joni(status):
-    with open(STATUS_FILE, "w") as f:
-        f.write(status)
-
-# ================== STYLE ==================
 st.markdown("""
 <style>
-.stApp { background: #f5f6fa; }
-.block-container { max-width: 900px; padding-top: 25px; }
+.stApp { background: #f6f7fb; }
+.block-container { max-width: 850px; padding-top: 25px; }
 .hero {
     background: linear-gradient(135deg, #d60000, #ff4040);
-    padding: 32px;
-    border-radius: 26px;
+    padding: 30px;
+    border-radius: 24px;
     color: white;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(230,0,0,0.25);
+    box-shadow: 0 10px 28px rgba(230,0,0,0.25);
 }
-.hero h1 { font-size: 46px; margin: 0; }
-.hero p { font-size: 18px; margin-top: 8px; }
+.hero h1 { font-size: 44px; margin: 0; }
 .card {
     background: white;
     padding: 18px;
@@ -119,191 +92,164 @@ st.markdown("""
     box-shadow: 0 5px 18px rgba(0,0,0,0.06);
     border: 1px solid #eeeeee;
 }
-.service {
-    background: #fff4f4;
-    padding: 12px;
-    border-radius: 14px;
-    margin: 6px 0;
-    border: 1px solid #ffd0d0;
-}
-.danger {
-    background: #111;
-    color: white;
-    padding: 18px;
-    border-radius: 18px;
-    text-align: center;
-    margin-top: 16px;
-}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="hero">
     <h1>🏍️ GOBENG</h1>
-    <p>Platform Bengkel Panggilan Online</p>
-    <p>Menghubungkan pelanggan dengan mitra bengkel terdekat</p>
-    <p><b>Powered by JASUN MOTOR</b></p>
+    <p>Bengkel Panggilan Online • Cepat • Aman • Terpercaya</p>
 </div>
 """, unsafe_allow_html=True)
 
 menu = st.sidebar.radio("Menu GOBENG", ["Pesan Layanan", "Dashboard Admin"])
 
-# ================== HALAMAN PESAN ==================
 if menu == "Pesan Layanan":
-    status_joni = baca_status_joni()
-
-    if status_joni == "ONLINE":
-        st.success("🟢 Teknisi Joni dari JASUN MOTOR Sedang Online")
-    else:
-        st.error("🔴 Teknisi Joni dari JASUN MOTOR Sedang Offline")
-
-    st.info("""
-🕒 Jam Operasional  
-Senin - Minggu: 07:00 - 22:00  
-
-🚨 Darurat Motor Mogok: 24 Jam
-""")
-
-    st.info("""
-📍 Area Layanan GOBENG  
-✅ Karangtengah  
-✅ Cianjur Kota  
-✅ Cilaku  
-✅ Ciranjang  
-✅ Sukaluyu
-""")
-
     st.markdown("""
 <div class="card">
-<b>Tentang GOBENG</b><br>
-GOBENG adalah platform bengkel panggilan online yang menghubungkan pelanggan dengan mitra bengkel terpercaya.<br><br>
-🔧 Mitra Bengkel Utama: <b>JASUN MOTOR</b><br>
-👨‍🔧 Teknisi Lapangan: <b>Joni</b>
+<b>Motor mogok? Ban bocor?</b><br>
+Pilih Pesan Cepat kalau ingin langsung panggil teknisi.
 </div>
 """, unsafe_allow_html=True)
 
-    st.markdown("""
-<div class="card">
-<b>Kenapa pilih GOBENG?</b><br>
-⭐ Rating pelayanan 4.9<br>
-⚡ Respon cepat<br>
-📍 Datang ke lokasi pelanggan<br>
-🗺️ Link Google Maps langsung ke teknisi<br>
-🔔 Owner menerima notifikasi Telegram otomatis
-</div>
-""", unsafe_allow_html=True)
-
-    pesan_darurat = f"""
-Halo GOBENG
-
-Saya butuh bantuan DARURAT.
-Motor mogok / kendaraan bermasalah.
-
-Mitra Bengkel: {MITRA_UTAMA}
-Mohon teknisi Joni segera merespons.
-
-Saya akan kirim lokasi lewat WhatsApp.
-"""
-    link_darurat = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan_darurat)}"
-
-    st.markdown("""
-<div class="danger">
-<h3>🚨 Darurat Motor Mogok?</h3>
-<p>Klik tombol di bawah untuk langsung menghubungi teknisi JASUN MOTOR.</p>
-</div>
-""", unsafe_allow_html=True)
-
-    st.markdown(f"### [🚨 HUBUNGI JONI SEKARANG]({link_darurat})")
-
-    st.markdown("### 📞 Bantuan & Pengaduan")
     st.info("""
-📞 Customer Service GOBENG: 0813-9544-0454  
-🔧 Mitra Bengkel Utama: JASUN MOTOR  
-👨‍🔧 Teknisi Lapangan: Joni — 0856-2287-257
+👨‍🔧 Teknisi Joni: 0856-2287-257  
+👨‍💼 Bantuan Owner: 0813-9544-0454
 """)
 
-    st.markdown("### 🔧 Layanan Tersedia")
-    st.markdown("""
-<div class="service">🛞 Tambal Ban</div>
-<div class="service">🛵 Motor Mogok</div>
-<div class="service">🛢️ Ganti Oli</div>
-<div class="service">🔋 Aki Soak</div>
-<div class="service">⚙️ Servis Ringan</div>
-""", unsafe_allow_html=True)
+    mode = st.radio("Pilih Cara Pesan", ["🟢 Pesan Cepat", "🔵 Pesan Lengkap"])
 
-    st.markdown("### 📝 Form Pemesanan")
+    if mode == "🟢 Pesan Cepat":
+        st.markdown("### 🟢 Pesan Cepat")
 
-    nama = st.text_input("Nama Pelanggan")
-    hp = st.text_input("Nomor HP / WhatsApp")
-    kendaraan = st.selectbox("Jenis Kendaraan", ["Motor", "Mobil"])
-    layanan = st.selectbox("Pilih Layanan", list(harga.keys()))
-    jarak = st.number_input("Perkiraan Jarak dari Teknisi/Bengkel (KM)", min_value=0.0, step=0.5)
+        nama = st.text_input("Nama")
+        hp = st.text_input("Nomor WhatsApp")
+        layanan = st.selectbox("Pilih Layanan", list(harga.keys()))
+        lokasi = st.text_input("Link Google Maps / Share Location")
+        catatan = st.text_area("Catatan singkat, contoh: ban kempes di jalan")
 
-    alamat = st.text_area("Alamat Lengkap")
-    patokan = st.text_input("Patokan Lokasi")
-    maps_link = st.text_input("Link Google Maps Lokasi Pelanggan")
-    keluhan = st.text_area("Keluhan Kendaraan")
+        st.success(f"Estimasi jasa: {harga[layanan]}")
+        st.warning("Biaya panggilan menyesuaikan jarak lokasi pelanggan.")
 
-    st.info("Cara ambil link lokasi: buka Google Maps → pilih lokasi → Bagikan → Salin link → tempel di kolom Link Google Maps.")
+        if st.button("📲 PANGGIL TEKNISI SEKARANG", use_container_width=True):
+            if nama and hp and layanan:
+                order_id = "GB-" + datetime.now().strftime("%Y%m%d-%H%M%S")
+                waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    foto = st.file_uploader("Upload Foto Kerusakan Kendaraan", type=["jpg", "jpeg", "png"])
-    if foto:
-        st.image(foto, caption="Foto kerusakan berhasil diupload", use_container_width=True)
+                data_order = {
+                    "Order ID": order_id,
+                    "Waktu": waktu,
+                    "Nama": nama,
+                    "HP": hp,
+                    "Kendaraan": "Motor",
+                    "Layanan": layanan,
+                    "Jarak KM": "",
+                    "Estimasi Jasa": harga[layanan],
+                    "Ongkos Panggilan": "Menyesuaikan lokasi",
+                    "Alamat": "",
+                    "Patokan": "",
+                    "Keluhan": catatan,
+                    "Foto": "Tidak ada foto",
+                    "Status": "Menunggu Teknisi",
+                    "Biaya Final": 0,
+                    "Rating": 0,
+                    "Ulasan": ""
+                }
 
-    biaya_panggilan = ongkos_panggilan(jarak)
+                simpan_order(data_order)
 
-    st.success(f"Estimasi jasa: {harga[layanan]}")
-    st.info(f"Estimasi ongkos panggilan: {biaya_panggilan}")
-    st.warning("Estimasi final akan diinformasikan teknisi sebelum pengerjaan.")
-
-    if status_joni == "OFFLINE":
-        st.error("Teknisi sedang offline. Order tetap bisa dikirim, tetapi respons mungkin lebih lambat.")
-
-    if st.button("📲 PANGGIL TEKNISI SEKARANG", use_container_width=True):
-        if nama and hp and alamat and keluhan:
-            df_sekarang = baca_order()
-            nomor_antrian = len(df_sekarang) + 1
-
-            order_id = "GB-" + datetime.now().strftime("%Y%m%d-%H%M%S")
-            waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            status_foto = "Sudah upload foto kerusakan" if foto else "Belum upload foto"
-
-            data_order = {
-                "No Antrian": nomor_antrian,
-                "Order ID": order_id,
-                "Waktu": waktu,
-                "Platform": NAMA_PLATFORM,
-                "Mitra Bengkel": MITRA_UTAMA,
-                "Teknisi": "Joni",
-                "Nama": nama,
-                "HP": hp,
-                "Kendaraan": kendaraan,
-                "Layanan": layanan,
-                "Jarak KM": jarak,
-                "Estimasi Jasa": harga[layanan],
-                "Ongkos Panggilan": biaya_panggilan,
-                "Alamat": alamat,
-                "Patokan": patokan,
-                "Google Maps": maps_link,
-                "Keluhan": keluhan,
-                "Foto": status_foto,
-                "Status": "Menunggu Teknisi",
-                "Biaya Final": 0,
-                "Rating": 0,
-                "Ulasan": ""
-            }
-
-            simpan_order(data_order)
-
-            pesan = f"""
+                pesan = f"""
 Halo GOBENG
 
-NO ANTRIAN: {nomor_antrian}
 ORDER ID: {order_id}
 
-Platform: {NAMA_PLATFORM}
-Mitra Bengkel: {MITRA_UTAMA}
-Teknisi: Joni
+Saya ingin panggil teknisi.
+
+Nama: {nama}
+No HP/WA: {hp}
+Layanan: {layanan}
+Estimasi Jasa: {harga[layanan]}
+Lokasi Google Maps: {lokasi}
+Catatan: {catatan}
+
+Mohon bantuan teknisi Joni datang ke lokasi.
+"""
+
+                telegram_msg = f"""
+🔔 ORDER BARU GOBENG
+
+Order ID: {order_id}
+Nama: {nama}
+HP: {hp}
+Layanan: {layanan}
+Lokasi: {lokasi}
+Catatan: {catatan}
+Status: Menunggu Teknisi
+"""
+                kirim_telegram(telegram_msg)
+
+                link_joni = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan)}"
+                st.success(f"Order berhasil dibuat: {order_id}")
+                st.markdown(f"### [➡ KIRIM ORDER KE JONI]({link_joni})")
+            else:
+                st.warning("Mohon isi nama dan nomor WhatsApp dulu.")
+
+    if mode == "🔵 Pesan Lengkap":
+        st.markdown("### 🔵 Pesan Lengkap")
+
+        nama = st.text_input("Nama Pelanggan")
+        hp = st.text_input("Nomor HP / WhatsApp")
+        kendaraan = st.selectbox("Jenis Kendaraan", ["Motor", "Mobil"])
+        layanan = st.selectbox("Pilih Layanan", list(harga.keys()))
+        jarak = st.number_input("Perkiraan Jarak dari Bengkel (KM)", min_value=0.0, step=0.5)
+
+        alamat = st.text_area("Alamat Lengkap")
+        patokan = st.text_input("Patokan Lokasi")
+        link_maps = st.text_input("Link Google Maps / Share Location")
+        keluhan = st.text_area("Keluhan Kendaraan")
+
+        foto = st.file_uploader("Upload Foto Kerusakan Kendaraan", type=["jpg", "jpeg", "png"])
+        if foto:
+            st.image(foto, caption="Foto kerusakan berhasil diupload", use_container_width=True)
+
+        biaya_panggilan = ongkos_panggilan(jarak)
+
+        st.success(f"Estimasi jasa: {harga[layanan]}")
+        st.info(f"Estimasi ongkos panggilan: {biaya_panggilan}")
+        st.warning("Estimasi final akan diinformasikan teknisi sebelum pengerjaan.")
+
+        if st.button("📲 PANGGIL TEKNISI SEKARANG", use_container_width=True):
+            if nama and hp and alamat and keluhan:
+                order_id = "GB-" + datetime.now().strftime("%Y%m%d-%H%M%S")
+                waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                status_foto = "Sudah upload foto kerusakan" if foto else "Belum upload foto"
+
+                data_order = {
+                    "Order ID": order_id,
+                    "Waktu": waktu,
+                    "Nama": nama,
+                    "HP": hp,
+                    "Kendaraan": kendaraan,
+                    "Layanan": layanan,
+                    "Jarak KM": jarak,
+                    "Estimasi Jasa": harga[layanan],
+                    "Ongkos Panggilan": biaya_panggilan,
+                    "Alamat": alamat,
+                    "Patokan": patokan,
+                    "Keluhan": keluhan,
+                    "Foto": status_foto,
+                    "Status": "Menunggu Teknisi",
+                    "Biaya Final": 0,
+                    "Rating": 0,
+                    "Ulasan": ""
+                }
+
+                simpan_order(data_order)
+
+                pesan = f"""
+Halo GOBENG
+
+ORDER ID: {order_id}
 
 Saya ingin panggil teknisi.
 
@@ -314,128 +260,63 @@ Layanan: {layanan}
 Estimasi Jasa: {harga[layanan]}
 Perkiraan Jarak: {jarak} KM
 Ongkos Panggilan: {biaya_panggilan}
-
-Alamat:
-{alamat}
-
-Patokan:
-{patokan}
-
-Google Maps:
-{maps_link}
-
-Keluhan:
-{keluhan}
-
+Alamat: {alamat}
+Patokan: {patokan}
+Google Maps: {link_maps}
+Keluhan: {keluhan}
 Foto Kerusakan: {status_foto}
 
-Mohon bantuan teknisi Joni dari JASUN MOTOR datang ke lokasi.
+Mohon bantuan teknisi Joni datang ke lokasi.
 """
 
-            notif_telegram = f"""
+                telegram_msg = f"""
 🔔 ORDER BARU GOBENG
 
-🔢 No Antrian: {nomor_antrian}
-🆔 Order ID: {order_id}
-⏰ Waktu: {waktu}
-
-🏢 Platform: {NAMA_PLATFORM}
-🔧 Mitra Bengkel: {MITRA_UTAMA}
-👨‍🔧 Teknisi: Joni
-
-👤 Nama: {nama}
-📱 HP/WA: {hp}
-🏍️ Kendaraan: {kendaraan}
-🔧 Layanan: {layanan}
-
-💰 Estimasi Jasa: {harga[layanan]}
-📍 Jarak: {jarak} KM
-🚚 Ongkos Panggilan: {biaya_panggilan}
-
-🏠 Alamat:
-{alamat}
-
-📌 Patokan:
-{patokan}
-
-🗺️ Google Maps:
-{maps_link}
-
-🛠️ Keluhan:
-{keluhan}
-
-📷 Foto: {status_foto}
-
-👨‍🔧 Status Joni: {status_joni}
-Status Order: Menunggu Teknisi
+Order ID: {order_id}
+Nama: {nama}
+HP: {hp}
+Layanan: {layanan}
+Alamat: {alamat}
+Patokan: {patokan}
+Google Maps: {link_maps}
+Keluhan: {keluhan}
+Status: Menunggu Teknisi
 """
-            kirim_telegram(notif_telegram)
+                kirim_telegram(telegram_msg)
 
-            link_joni = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan)}"
-            link_owner = f"https://wa.me/{NOMOR_WA_OWNER}?text={urllib.parse.quote('Salinan order GOBENG:\\n' + pesan)}"
+                link_joni = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan)}"
+                link_owner = f"https://wa.me/{NOMOR_WA_OWNER}?text={urllib.parse.quote('Salinan order GOBENG:\\n' + pesan)}"
 
-            st.success(f"Order berhasil dibuat: {order_id}")
-            st.success("Notifikasi Telegram otomatis dikirim ke Owner.")
+                st.success(f"Order berhasil dibuat: {order_id}")
+                st.markdown(f"### [➡ KIRIM ORDER KE JONI]({link_joni})")
+                st.markdown(f"### [📩 KIRIM SALINAN KE OWNER]({link_owner})")
+            else:
+                st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
-            if maps_link:
-                st.markdown(f"### [🗺️ BUKA LOKASI DI GOOGLE MAPS]({maps_link})")
-
-            st.markdown(f"### [➡ KIRIM ORDER KE JONI / JASUN MOTOR]({link_joni})")
-            st.markdown(f"### [📩 KIRIM SALINAN KE OWNER GOBENG]({link_owner})")
-        else:
-            st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
-
-# ================== DASHBOARD ADMIN ==================
 if menu == "Dashboard Admin":
     st.markdown("### 🔐 Dashboard Admin GOBENG")
     password = st.text_input("Masukkan Password Admin", type="password")
 
     if password == PASSWORD_ADMIN:
         st.success("Login admin berhasil.")
-
-        st.markdown("### 👨‍🔧 Status Teknisi Joni - JASUN MOTOR")
-        status_joni = baca_status_joni()
-
-        status_baru_joni = st.radio(
-            "Ubah Status Teknisi",
-            ["ONLINE", "OFFLINE"],
-            index=0 if status_joni == "ONLINE" else 1
-        )
-
-        if st.button("💾 Simpan Status Teknisi"):
-            simpan_status_joni(status_baru_joni)
-            st.success(f"Status Joni sekarang: {status_baru_joni}")
-
         df = baca_order()
 
         if not df.empty:
-            for col in ["Biaya Final", "Rating", "Ulasan", "Google Maps", "No Antrian", "Mitra Bengkel", "Platform", "Teknisi"]:
-                if col not in df.columns:
-                    if col in ["Biaya Final", "Rating", "No Antrian"]:
-                        df[col] = 0
-                    elif col == "Mitra Bengkel":
-                        df[col] = MITRA_UTAMA
-                    elif col == "Platform":
-                        df[col] = NAMA_PLATFORM
-                    elif col == "Teknisi":
-                        df[col] = "Joni"
-                    else:
-                        df[col] = ""
+            if "Biaya Final" not in df.columns:
+                df["Biaya Final"] = 0
+            if "Rating" not in df.columns:
+                df["Rating"] = 0
+            if "Ulasan" not in df.columns:
+                df["Ulasan"] = ""
 
             total_order = len(df)
-            order_hari_ini = len(df[df["Waktu"].astype(str).str.startswith(datetime.now().strftime("%Y-%m-%d"))])
             selesai = len(df[df["Status"] == "Selesai"])
             pendapatan = int(pd.to_numeric(df["Biaya Final"], errors="coerce").fillna(0).sum())
-            rata_rating = pd.to_numeric(df["Rating"], errors="coerce").replace(0, pd.NA).dropna().mean()
 
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3 = st.columns(3)
             col1.metric("Total Order", total_order)
-            col2.metric("Order Hari Ini", order_hari_ini)
-            col3.metric("Selesai", selesai)
-            col4.metric("Pendapatan", f"Rp{pendapatan:,.0f}".replace(",", "."))
-
-            if pd.notna(rata_rating):
-                st.success(f"⭐ Rating rata-rata: {rata_rating:.1f}/5")
+            col2.metric("Selesai", selesai)
+            col3.metric("Pendapatan", f"Rp{pendapatan:,.0f}".replace(",", "."))
 
             st.markdown("### 🔄 Update Order")
             order_pilih = st.selectbox("Pilih Order ID", df["Order ID"].tolist())
@@ -450,11 +331,6 @@ if menu == "Dashboard Admin":
             if st.button("Simpan Update Order", use_container_width=True):
                 update_order(order_pilih, status_baru, biaya_final, rating, ulasan)
                 st.success("Update order berhasil. Refresh halaman untuk melihat perubahan.")
-
-            st.markdown("### 🗺️ Navigasi Order")
-            if "Google Maps" in df.columns:
-                df_maps = df[["Order ID", "Nama", "Layanan", "Mitra Bengkel", "Google Maps", "Status"]]
-                st.dataframe(df_maps, use_container_width=True)
 
             st.markdown("### 📋 Riwayat Order")
             st.dataframe(df, use_container_width=True)
@@ -472,4 +348,4 @@ if menu == "Dashboard Admin":
         st.error("Password salah.")
 
 st.markdown("---")
-st.caption("© GOBENG - Platform Bengkel Panggilan Online | Mitra Utama: JASUN MOTOR")
+st.caption("© GOBENG - Bengkel Panggilan Online")
