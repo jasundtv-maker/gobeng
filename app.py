@@ -12,23 +12,23 @@ from datetime import datetime
 NAMA_APP = "GOBENG"
 SLOGAN = "Motor Mogok? GOBENG-IN AJA!"
 
-NAMA_BENGKEL = "Bengkel Joni"
-ALAMAT_BENGKEL = "Isi alamat bengkel kamu di sini"
-JAM_OPERASIONAL = "08.00 - 20.00 WIB"
+NAMA_BENGKEL = "Jasund Motor"
+ALAMAT_BENGKEL = "kp caringin, RT./RW/RW.005/005, Sukasari, Kec. Karangtengah, Kabupaten Cianjur, Jawa Barat 43281"
+JAM_OPERASIONAL = "07.00 - 20.00 WIB"
 
-NO_WA_BENGKEL = "628xxxxxxxxxx"  # ganti nomor WA
-GOOGLE_MAPS_LINK = "https://maps.google.com/?q=Bengkel+Joni"
+NO_WA_BENGKEL = "+62 856-2287-257"
+GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/z8eMg2nb51No7Pdk6"
 
 # isi dengan link website GOBENG yang online
-LINK_GOBENG = "https://link-gobeng-kamu.streamlit.app"
+LINK_GOBENG = "https://gobeng.streamlit.app"
 
 # Telegram
-TELEGRAM_BOT_TOKEN = "ISI_TOKEN_BOT_TELEGRAM"
-TELEGRAM_CHAT_ID = "ISI_CHAT_ID_TELEGRAM"
+TELEGRAM_BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tYM"
+TELEGRAM_CHAT_ID = "8951538688"
 
 
 def kirim_telegram(pesan):
-    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_BOT_TELEGRAM":
+    if TELEGRAM_BOT_TOKEN == "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tYM":
         return
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
