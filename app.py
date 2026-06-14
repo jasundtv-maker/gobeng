@@ -10,8 +10,8 @@ st.set_page_config(page_title="GOBENG V7", page_icon="🏍️", layout="centered
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
 
-BOT_TOKEN = ""
-CHAT_ID_OWNER = ""
+BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
+CHAT_ID_OWNER = "8951538688"
 
 FILE_ORDER = "orders.csv"
 PASSWORD_ADMIN = "joni123"
