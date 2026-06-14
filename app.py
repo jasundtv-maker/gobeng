@@ -52,10 +52,19 @@ def baca_order():
 def update_order(order_id, status_baru, biaya_final, rating, ulasan):
     df = baca_order()
     if not df.empty:
+        if "Biaya Final" not in df.columns:
+            df["Biaya Final"] = 0
+        if "Rating" not in df.columns:
+            df["Rating"] = 0
+        if "Ulasan" not in df.columns:
+            df["Ulasan"] = ""
+
+        df["Ulasan"] = df["Ulasan"].astype("object")
+
         df.loc[df["Order ID"] == order_id, "Status"] = status_baru
-        df.loc[df["Order ID"] == order_id, "Biaya Final"] = biaya_final
-        df.loc[df["Order ID"] == order_id, "Rating"] = rating
-        df.loc[df["Order ID"] == order_id, "Ulasan"] = ulasan
+        df.loc[df["Order ID"] == order_id, "Biaya Final"] = int(biaya_final)
+        df.loc[df["Order ID"] == order_id, "Rating"] = int(rating)
+        df.loc[df["Order ID"] == order_id, "Ulasan"] = str(ulasan)
         df.to_csv(FILE_ORDER, index=False)
 
 def kirim_telegram(pesan):
