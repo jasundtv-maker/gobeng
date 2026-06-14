@@ -1,6 +1,5 @@
 import streamlit as st
 import urllib.parse
-import streamlit.components.v1 as components
 
 st.set_page_config(page_title="GOBENG", page_icon="🏍️", layout="centered")
 
@@ -14,41 +13,23 @@ st.markdown("---")
 nama = st.text_input("Nama Pelanggan")
 hp = st.text_input("Nomor HP")
 kendaraan = st.selectbox("Jenis Kendaraan", ["Motor", "Mobil"])
-layanan = st.selectbox("Pilih Layanan", ["Tambal Ban", "Motor Mogok", "Ganti Oli", "Servis Ringan", "Isi Angin", "Ganti Busi", "Aki Soak"])
+
+layanan = st.selectbox(
+    "Pilih Layanan",
+    ["Tambal Ban", "Motor Mogok", "Ganti Oli", "Servis Ringan", "Isi Angin", "Ganti Busi", "Aki Soak"]
+)
+
 alamat = st.text_area("Alamat Lengkap")
 patokan = st.text_input("Patokan Lokasi")
-
-st.markdown("### 📍 Ambil Lokasi Otomatis")
-components.html("""
-<button onclick="getLocation()" style="font-size:18px;padding:12px;border-radius:10px;">
-📍 Ambil Lokasi Saya
-</button>
-<p id="lokasi"></p>
-<script>
-function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(showPosition, showError);
-  } else {
-    document.getElementById("lokasi").innerHTML = "Browser tidak mendukung GPS.";
-  }
-}
-function showPosition(position) {
-  var lat = position.coords.latitude;
-  var lon = position.coords.longitude;
-  var link = "https://maps.google.com/?q=" + lat + "," + lon;
-  document.getElementById("lokasi").innerHTML =
-    "Salin link lokasi ini:<br><b>" + link + "</b>";
-}
-function showError(error) {
-  document.getElementById("lokasi").innerHTML =
-    "Lokasi gagal terbaca. Pastikan izin lokasi aktif.";
-}
-</script>
-""", height=160)
-
-link_lokasi = st.text_input("Tempel link lokasi dari tombol di atas")
-
 keluhan = st.text_area("Keluhan Kendaraan")
+
+foto = st.file_uploader(
+    "Upload foto kerusakan kendaraan",
+    type=["jpg", "jpeg", "png"]
+)
+
+if foto:
+    st.image(foto, caption="Foto kerusakan berhasil diupload", use_container_width=True)
 
 harga = {
     "Tambal Ban": "Mulai Rp15.000",
@@ -62,8 +43,12 @@ harga = {
 
 st.info(f"Estimasi biaya: {harga[layanan]}")
 
+st.info("Untuk lokasi, pelanggan bisa kirim share location langsung di WhatsApp setelah tombol dibuka.")
+
 if st.button("📲 Panggil Teknisi Joni"):
     if nama and hp and alamat and keluhan:
+        status_foto = "Sudah upload foto kerusakan" if foto else "Belum upload foto"
+
         pesan = f"""
 Halo GOBENG
 
@@ -76,12 +61,16 @@ Layanan: {layanan}
 Estimasi Biaya: {harga[layanan]}
 Alamat: {alamat}
 Patokan: {patokan}
-Lokasi Google Maps: {link_lokasi}
 Keluhan: {keluhan}
+Foto Kerusakan: {status_foto}
+
+Catatan:
+Saya akan mengirim share location lewat WhatsApp setelah ini.
 
 Mohon bantuan teknisi Joni datang ke lokasi.
 """
         link = f"https://wa.me/{NOMOR_WA}?text={urllib.parse.quote(pesan)}"
+
         st.success("Data siap dikirim ke WhatsApp Teknisi Joni.")
         st.markdown(f"### [➡ Hubungi Teknisi Joni]({link})")
     else:
