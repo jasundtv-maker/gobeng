@@ -5,8 +5,9 @@ import pandas as pd
 import os
 import requests
 
-st.set_page_config(page_title="GOBENG V6", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="GOBENG V2.2", page_icon="🏍️", layout="centered")
 
+# ================== KONFIGURASI ==================
 NOMOR_WA_JONI = "628562287257"
 NOMOR_WA_OWNER = "6281395440454"
 
@@ -14,8 +15,10 @@ BOT_TOKEN = "8742663611:AAFxqT7hOaBXgxex1Bkn4mnM40zPWp_eLO8"
 CHAT_ID_OWNER = "8951538688"
 
 FILE_ORDER = "orders.csv"
+STATUS_FILE = "status_joni.txt"
 PASSWORD_ADMIN = "joni123"
 
+# ================== DATA HARGA ==================
 harga = {
     "Tambal Ban": "Mulai Rp15.000",
     "Motor Mogok": "Mulai Rp20.000",
@@ -26,6 +29,7 @@ harga = {
     "Aki Soak": "Menyesuaikan kondisi kendaraan",
 }
 
+# ================== FUNGSI ==================
 def ongkos_panggilan(jarak):
     if jarak <= 3:
         return "Gratis panggilan"
@@ -62,10 +66,23 @@ def update_order(order_id, status_baru, biaya_final, rating, ulasan):
         df.loc[df["Order ID"] == order_id, "Ulasan"] = ulasan
         df.to_csv(FILE_ORDER, index=False)
 
+def baca_status_joni():
+    if not os.path.exists(STATUS_FILE):
+        with open(STATUS_FILE, "w") as f:
+            f.write("ONLINE")
+    with open(STATUS_FILE, "r") as f:
+        return f.read().strip()
+
+def simpan_status_joni(status):
+    with open(STATUS_FILE, "w") as f:
+        f.write(status)
+
+# ================== STYLE ==================
 st.markdown("""
 <style>
 .stApp { background: #f5f6fa; }
 .block-container { max-width: 880px; padding-top: 25px; }
+
 .hero {
     background: linear-gradient(135deg, #d60000, #ff4040);
     padding: 32px;
@@ -76,6 +93,7 @@ st.markdown("""
 }
 .hero h1 { font-size: 46px; margin: 0; }
 .hero p { font-size: 18px; margin-top: 8px; }
+
 .card {
     background: white;
     padding: 18px;
@@ -102,16 +120,41 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ================== HEADER ==================
 st.markdown("""
 <div class="hero">
-    <h1>🏍️ GOBENG V6</h1>
+    <h1>🏍️ GOBENG</h1>
     <p>Bengkel Panggilan Online • Cepat • Praktis • Terpercaya</p>
 </div>
 """, unsafe_allow_html=True)
 
 menu = st.sidebar.radio("Menu GOBENG", ["Pesan Layanan", "Dashboard Admin"])
 
+# ================== HALAMAN PESAN ==================
 if menu == "Pesan Layanan":
+    status_joni = baca_status_joni()
+
+    if status_joni == "ONLINE":
+        st.success("🟢 Teknisi Joni Sedang Online")
+    else:
+        st.error("🔴 Teknisi Joni Sedang Offline")
+
+    st.info("""
+🕒 Jam Operasional  
+Senin - Minggu: 07:00 - 22:00  
+
+🚨 Darurat Motor Mogok: 24 Jam
+""")
+
+    st.info("""
+📍 Area Layanan GOBENG  
+✅ Karangtengah  
+✅ Cianjur Kota  
+✅ Cilaku  
+✅ Ciranjang  
+✅ Sukaluyu
+""")
+
     st.success("🔥 Promo GOBENG: Tambal ban mulai Rp15.000. Biaya panggilan menyesuaikan jarak.")
 
     st.markdown("""
@@ -184,6 +227,9 @@ Saya akan kirim lokasi lewat WhatsApp.
     st.info(f"Estimasi ongkos panggilan: {biaya_panggilan}")
     st.warning("Estimasi final akan diinformasikan teknisi sebelum pengerjaan.")
 
+    if status_joni == "OFFLINE":
+        st.error("Teknisi sedang offline. Order tetap bisa dikirim, tetapi respons mungkin lebih lambat.")
+
     if st.button("📲 PANGGIL TEKNISI SEKARANG", use_container_width=True):
         if nama and hp and alamat and keluhan:
             df_sekarang = baca_order()
@@ -251,7 +297,7 @@ Mohon bantuan teknisi Joni datang ke lokasi.
 """
 
             notif_telegram = f"""
-🔔 ORDER BARU GOBENG V6
+🔔 ORDER BARU GOBENG
 
 🔢 No Antrian: {nomor_antrian}
 🆔 Order ID: {order_id}
@@ -280,7 +326,8 @@ Mohon bantuan teknisi Joni datang ke lokasi.
 
 📷 Foto: {status_foto}
 
-Status: Menunggu Teknisi
+👨‍🔧 Status Joni: {status_joni}
+Status Order: Menunggu Teknisi
 """
             kirim_telegram(notif_telegram)
 
@@ -298,12 +345,27 @@ Status: Menunggu Teknisi
         else:
             st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
+# ================== DASHBOARD ADMIN ==================
 if menu == "Dashboard Admin":
-    st.markdown("### 🔐 Dashboard Admin GOBENG V6")
+    st.markdown("### 🔐 Dashboard Admin GOBENG")
     password = st.text_input("Masukkan Password Admin", type="password")
 
     if password == PASSWORD_ADMIN:
         st.success("Login admin berhasil.")
+
+        st.markdown("### 👨‍🔧 Status Teknisi Joni")
+        status_joni = baca_status_joni()
+
+        status_baru_joni = st.radio(
+            "Ubah Status Teknisi",
+            ["ONLINE", "OFFLINE"],
+            index=0 if status_joni == "ONLINE" else 1
+        )
+
+        if st.button("💾 Simpan Status Teknisi"):
+            simpan_status_joni(status_baru_joni)
+            st.success(f"Status Joni sekarang: {status_baru_joni}")
+
         df = baca_order()
 
         if not df.empty:
@@ -341,8 +403,9 @@ if menu == "Dashboard Admin":
                 st.success("Update order berhasil. Refresh halaman untuk melihat perubahan.")
 
             st.markdown("### 🗺️ Navigasi Order")
-            df_maps = df[["Order ID", "Nama", "Layanan", "Google Maps", "Status"]]
-            st.dataframe(df_maps, use_container_width=True)
+            if "Google Maps" in df.columns:
+                df_maps = df[["Order ID", "Nama", "Layanan", "Google Maps", "Status"]]
+                st.dataframe(df_maps, use_container_width=True)
 
             st.markdown("### 📋 Riwayat Order")
             st.dataframe(df, use_container_width=True)
