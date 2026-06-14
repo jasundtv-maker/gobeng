@@ -6,9 +6,20 @@ import os
 
 st.set_page_config(page_title="GOBENG", page_icon="🏍️", layout="centered")
 
-NOMOR_WA = "628562287257"
+NOMOR_WA_JONI = "628562287257"
+NOMOR_WA_OWNER = "6281395440454"
 FILE_ORDER = "orders.csv"
 PASSWORD_ADMIN = "joni123"
+
+harga = {
+    "Tambal Ban": "Mulai Rp15.000",
+    "Motor Mogok": "Mulai Rp20.000",
+    "Ganti Oli": "Jasa mulai Rp5.000",
+    "Servis Ringan": "Mulai Rp20.000",
+    "Isi Angin": "Mulai Rp5.000",
+    "Ganti Busi": "Jasa mulai Rp10.000",
+    "Aki Soak": "Menyesuaikan kondisi kendaraan",
+}
 
 def simpan_order(data):
     df_baru = pd.DataFrame([data])
@@ -19,10 +30,16 @@ def simpan_order(data):
         df = df_baru
     df.to_csv(FILE_ORDER, index=False)
 
+def update_status(order_id, status_baru):
+    if os.path.exists(FILE_ORDER):
+        df = pd.read_csv(FILE_ORDER)
+        df.loc[df["Order ID"] == order_id, "Status"] = status_baru
+        df.to_csv(FILE_ORDER, index=False)
+
 st.markdown("""
 <style>
 .stApp { background: #f7f8fa; }
-.block-container { max-width: 760px; padding-top: 25px; }
+.block-container { max-width: 780px; padding-top: 25px; }
 .hero {
     background: linear-gradient(135deg, #e60000, #ff4b4b);
     padding: 28px;
@@ -50,20 +67,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-menu = st.sidebar.radio(
-    "Menu GOBENG",
-    ["Pesan Layanan", "Dashboard Admin"]
-)
-
-harga = {
-    "Tambal Ban": "Mulai Rp15.000",
-    "Motor Mogok": "Mulai Rp20.000",
-    "Ganti Oli": "Jasa mulai Rp5.000",
-    "Servis Ringan": "Mulai Rp20.000",
-    "Isi Angin": "Mulai Rp5.000",
-    "Ganti Busi": "Jasa mulai Rp10.000",
-    "Aki Soak": "Menyesuaikan kondisi kendaraan",
-}
+menu = st.sidebar.radio("Menu GOBENG", ["Pesan Layanan", "Dashboard Admin"])
 
 if menu == "Pesan Layanan":
     st.markdown("""
@@ -73,37 +77,32 @@ if menu == "Pesan Layanan":
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("### 📞 Bantuan & Pengaduan")
+    st.info("""
+👨‍🔧 Teknisi Lapangan: Joni — 0856-2287-257  
+👨‍💼 Bantuan / Owner GOBENG: 0813-9544-0454
+""")
+
     st.markdown("### 📝 Form Pemesanan")
 
     nama = st.text_input("Nama Pelanggan")
     hp = st.text_input("Nomor HP / WhatsApp")
     kendaraan = st.selectbox("Jenis Kendaraan", ["Motor", "Mobil"])
-
-    layanan = st.selectbox(
-        "Pilih Layanan",
-        ["Tambal Ban", "Motor Mogok", "Ganti Oli", "Servis Ringan", "Isi Angin", "Ganti Busi", "Aki Soak"]
-    )
-
+    layanan = st.selectbox("Pilih Layanan", list(harga.keys()))
     alamat = st.text_area("Alamat Lengkap")
     patokan = st.text_input("Patokan Lokasi")
     keluhan = st.text_area("Keluhan Kendaraan")
 
-    foto = st.file_uploader(
-        "Upload Foto Kerusakan Kendaraan",
-        type=["jpg", "jpeg", "png"]
-    )
-
+    foto = st.file_uploader("Upload Foto Kerusakan Kendaraan", type=["jpg", "jpeg", "png"])
     if foto:
         st.image(foto, caption="Foto kerusakan berhasil diupload", use_container_width=True)
 
     st.success(f"Estimasi biaya: {harga[layanan]}")
-
     st.warning("""
-    🚨 Biaya panggilan menyesuaikan jarak lokasi pelanggan.
+🚨 Biaya panggilan menyesuaikan jarak lokasi pelanggan.
 
-    Estimasi final akan diinformasikan teknisi sebelum pengerjaan.
-    """)
-
+Estimasi final akan diinformasikan teknisi sebelum pengerjaan.
+""")
     st.info("Setelah WhatsApp terbuka, pelanggan bisa langsung mengirim share location kepada teknisi.")
 
     if st.button("📲 PANGGIL TEKNISI SEKARANG", use_container_width=True):
@@ -151,10 +150,13 @@ Saya akan mengirim share location lewat WhatsApp setelah ini.
 
 Mohon bantuan teknisi Joni datang ke lokasi.
 """
-            link = f"https://wa.me/{NOMOR_WA}?text={urllib.parse.quote(pesan)}"
+
+            link_joni = f"https://wa.me/{NOMOR_WA_JONI}?text={urllib.parse.quote(pesan)}"
+            link_owner = f"https://wa.me/{NOMOR_WA_OWNER}?text={urllib.parse.quote('Salinan order GOBENG:\\n' + pesan)}"
 
             st.success(f"Order berhasil dibuat: {order_id}")
-            st.markdown(f"### [➡ LANJUT KE WHATSAPP TEKNISI]({link})")
+            st.markdown(f"### [➡ KIRIM ORDER KE JONI]({link_joni})")
+            st.markdown(f"### [📩 KIRIM SALINAN KE OWNER]({link_owner})")
         else:
             st.warning("Mohon isi nama, nomor HP, alamat, dan keluhan dulu.")
 
@@ -163,17 +165,29 @@ if menu == "Dashboard Admin":
     password = st.text_input("Masukkan Password Admin", type="password")
 
     if password == PASSWORD_ADMIN:
+        st.success("Login admin berhasil.")
+
         if os.path.exists(FILE_ORDER):
             df = pd.read_csv(FILE_ORDER)
 
-            st.success("Login admin berhasil.")
-
             total_order = len(df)
             menunggu = len(df[df["Status"] == "Menunggu"])
+            proses = len(df[df["Status"] == "Diproses"])
+            selesai = len(df[df["Status"] == "Selesai"])
 
-            col1, col2 = st.columns(2)
-            col1.metric("Total Order", total_order)
-            col2.metric("Order Menunggu", menunggu)
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Total", total_order)
+            col2.metric("Menunggu", menunggu)
+            col3.metric("Diproses", proses)
+            col4.metric("Selesai", selesai)
+
+            st.markdown("### 🔄 Ubah Status Order")
+            order_pilih = st.selectbox("Pilih Order ID", df["Order ID"].tolist())
+            status_baru = st.selectbox("Status Baru", ["Menunggu", "Diproses", "Selesai", "Batal"])
+
+            if st.button("Simpan Status"):
+                update_status(order_pilih, status_baru)
+                st.success(f"Status {order_pilih} diubah menjadi {status_baru}. Silakan refresh halaman.")
 
             st.markdown("### 📋 Riwayat Order")
             st.dataframe(df, use_container_width=True)
