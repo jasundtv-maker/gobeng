@@ -17,7 +17,7 @@ ALAMAT_BENGKEL = "Kp Caringin RT/RW 005/005, Sukasari, Kec. Karangtengah, Kabupa
 JAM_OPERASIONAL = "07.00 - 20.00 WIB"
 
 NO_WA_BENGKEL = "628562287257"
-GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/28eMg2nb51No7Pdk6"
+GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/f5HMLq8Ro1rcdDcn8"
 
 # Ganti dengan link website GOBENG yang sudah online
 LINK_GOBENG = "https://gobeng.streamlit.app"
