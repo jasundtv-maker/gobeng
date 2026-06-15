@@ -2,32 +2,49 @@ import streamlit as st
 import requests
 import urllib.parse
 import qrcode
+import pandas as pd
+import os
 from io import BytesIO
 from datetime import datetime
 
+try:
+    from streamlit_js_eval import get_geolocation
+except Exception:
+    get_geolocation = None
+
+
 # =========================
-# GOBENG V8.1 PRO
+# GOBENG V9 PRO
 # =========================
 
 NAMA_APP = "GOBENG"
 SLOGAN = "Motor Mogok? GOBENG-IN AJA!"
 
 NAMA_BENGKEL = "Jasund Motor"
-ALAMAT_BENGKEL = "Kp Caringin RT/RW 005/005, Sukasari, Kec. Karangtengah, Kabupaten Cianjur, Jawa Barat 43281"
+ALAMAT_BENGKEL = "Kp Caringin RT/RW 005/005, Sukasari, Karangtengah, Cianjur - Jawa Barat"
 JAM_OPERASIONAL = "07.00 - 20.00 WIB"
 
 NO_WA_BENGKEL = "628562287257"
-GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/f5HMLq8Ro1rcdDcn8"
+NO_TELP_BENGKEL = "08562287257"
 
-# Ganti dengan link website GOBENG yang sudah online
+GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/28eMg2nb51No7Pdk6"
 LINK_GOBENG = "https://gobeng.streamlit.app"
+
+BANNER_FILE = "banner_gobeng.png.png"
+ORDER_FILE = "orders_gobeng.csv"
 
 # Telegram
 TELEGRAM_BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
 TELEGRAM_CHAT_ID = "8951538688"
 
 
+# =========================
+# FUNGSI DASAR
+# =========================
+
 def kirim_telegram(pesan):
+    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
+        return
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
@@ -42,26 +59,21 @@ def kirim_telegram(pesan):
     except Exception:
         pass
 
-    
 
-
-def buat_link_wa(nama, lokasi, keluhan):
+def buat_link_wa(nama, lokasi, keluhan, link_lokasi):
     pesan = f"""Halo {NAMA_BENGKEL}, saya butuh bantuan dari GOBENG.
 
 Nama: {nama}
-Lokasi: {lokasi}
+Lokasi tertulis: {lokasi}
 Keluhan: {keluhan}
+Lokasi GPS/Maps: {link_lokasi}
 
 Mohon segera dibantu."""
     return f"https://wa.me/{NO_WA_BENGKEL}?text={urllib.parse.quote(pesan)}"
 
 
 def buat_qr(link):
-    qr = qrcode.QRCode(
-        version=2,
-        box_size=10,
-        border=4
-    )
+    qr = qrcode.QRCode(version=2, box_size=10, border=4)
     qr.add_data(link)
     qr.make(fit=True)
 
@@ -72,8 +84,40 @@ def buat_qr(link):
     return buffer
 
 
+def simpan_order(nama, lokasi, keluhan, link_lokasi):
+    waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+    data_baru = pd.DataFrame([{
+        "waktu": waktu,
+        "nama": nama,
+        "lokasi": lokasi,
+        "keluhan": keluhan,
+        "link_lokasi": link_lokasi,
+        "status": "Menunggu"
+    }])
+
+    if os.path.exists(ORDER_FILE):
+        data_lama = pd.read_csv(ORDER_FILE)
+        data = pd.concat([data_lama, data_baru], ignore_index=True)
+    else:
+        data = data_baru
+
+    data.to_csv(ORDER_FILE, index=False)
+    return waktu
+
+
+def baca_order():
+    if os.path.exists(ORDER_FILE):
+        return pd.read_csv(ORDER_FILE)
+    return pd.DataFrame(columns=["waktu", "nama", "lokasi", "keluhan", "link_lokasi", "status"])
+
+
+# =========================
+# TAMPILAN
+# =========================
+
 st.set_page_config(
-    page_title="GOBENG V8.1 Pro",
+    page_title="GOBENG V9 Pro",
     page_icon="🔧",
     layout="centered"
 )
@@ -100,22 +144,6 @@ input, textarea, select {
     background-color: white !important;
 }
 
-.logo {
-    font-size: 56px;
-    font-weight: 900;
-    color: #ffcc00;
-    text-align: center;
-    margin-bottom: 0px;
-}
-
-.slogan {
-    font-size: 25px;
-    font-weight: 800;
-    color: white;
-    text-align: center;
-    margin-bottom: 25px;
-}
-
 .hero {
     background: linear-gradient(135deg, #330000, #111111);
     padding: 25px;
@@ -133,7 +161,7 @@ input, textarea, select {
 
 .hero-sub {
     color: white;
-    font-size: 24px;
+    font-size: 23px;
     font-weight: 800;
 }
 
@@ -157,7 +185,7 @@ div.stButton > button {
     width: 100%;
     background-color: #ff3333;
     color: white;
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 900;
     border-radius: 14px;
     border: none;
@@ -176,17 +204,28 @@ div.stDownloadButton > button {
 }
 </style>
 """, unsafe_allow_html=True)
-st.image("banner_gobeng.png.png", use_container_width=True)
 
+
+# Banner dashboard
+if os.path.exists(BANNER_FILE):
+    st.image(BANNER_FILE, use_container_width=True)
+else:
+    st.markdown("## 🔧 GOBENG")
+    st.markdown(f"### {SLOGAN}")
+
+st.success("📍 Isi form di bawah. Jika GPS aktif, lokasi pelanggan bisa terkirim langsung ke WhatsApp dan Telegram.")
 
 menu = st.sidebar.radio(
     "Menu GOBENG",
     [
         "🚨 Bantuan Mogok",
         "📍 Info Bengkel",
+        "📋 Order Masuk",
+        "📊 Statistik",
         "📱 QR Code Banner"
     ]
 )
+
 
 # =========================
 # BANTUAN MOGOK
@@ -202,8 +241,7 @@ if menu == "🚨 Bantuan Mogok":
     """, unsafe_allow_html=True)
 
     nama = st.text_input("Nama pelanggan")
-    lokasi = st.text_input("Lokasi motor mogok")
-
+    lokasi = st.text_input("Lokasi motor mogok / patokan")
     keluhan = st.selectbox(
         "Keluhan kendaraan",
         [
@@ -215,38 +253,53 @@ if menu == "🚨 Bantuan Mogok":
             "Lainnya"
         ]
     )
+    catatan = st.text_area("Catatan tambahan", placeholder="Contoh: dekat minimarket, depan masjid, pinggir jalan...")
 
-    catatan = st.text_area(
-        "Catatan tambahan",
-        placeholder="Contoh: motor mati di pinggir jalan dekat minimarket..."
-    )
+    st.markdown("### 📍 Lokasi GPS Otomatis")
+
+    link_lokasi = "Tidak menggunakan GPS"
+
+    if get_geolocation is not None:
+        lokasi_gps = get_geolocation()
+
+        if lokasi_gps and "coords" in lokasi_gps:
+            lat = lokasi_gps["coords"]["latitude"]
+            lon = lokasi_gps["coords"]["longitude"]
+            link_lokasi = f"https://maps.google.com/?q={lat},{lon}"
+            st.success("GPS berhasil terbaca.")
+            st.write(f"📍 Link lokasi: {link_lokasi}")
+        else:
+            st.info("Jika muncul izin lokasi di browser, klik Allow/Izinkan.")
+    else:
+        st.warning("Fitur GPS belum aktif. Pastikan requirements.txt sudah ada streamlit-js-eval.")
 
     if st.button("🚨 MINTA BANTUAN SEKARANG"):
         if nama.strip() == "" or lokasi.strip() == "":
-            st.warning("Nama dan lokasi wajib diisi.")
+            st.warning("Nama dan lokasi/patokan wajib diisi.")
         else:
             keluhan_lengkap = keluhan
             if catatan.strip():
                 keluhan_lengkap += f" - {catatan}"
 
-            waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            waktu = simpan_order(nama, lokasi, keluhan_lengkap, link_lokasi)
 
             pesan_telegram = f"""
-🚨 <b>ORDER BARU GOBENG V8.1 PRO</b>
+🚨 <b>ORDER BARU GOBENG V9 PRO</b>
 
 👤 Nama: {nama}
-📍 Lokasi: {lokasi}
+📍 Lokasi/Patokan: {lokasi}
 🛠 Keluhan: {keluhan_lengkap}
+🗺 GPS/Maps: {link_lokasi}
 ⏰ Waktu: {waktu}
 
 Segera cek pelanggan.
 """
             kirim_telegram(pesan_telegram)
 
-            st.success("Data berhasil masuk ke GOBENG.")
+            st.success("Order berhasil masuk ke GOBENG.")
             st.link_button(
                 "💬 LANJUT CHAT WHATSAPP BENGKEL",
-                buat_link_wa(nama, lokasi, keluhan_lengkap),
+                buat_link_wa(nama, lokasi, keluhan_lengkap, link_lokasi),
                 use_container_width=True
             )
 
@@ -257,6 +310,7 @@ Segera cek pelanggan.
     <div class="service-box">✅ Aki tekor / soak</div>
     <div class="service-box">✅ Mesin bermasalah</div>
     """, unsafe_allow_html=True)
+
 
 # =========================
 # INFO BENGKEL
@@ -273,11 +327,9 @@ elif menu == "📍 Info Bengkel":
     st.link_button("📍 BUKA GOOGLE MAPS", GOOGLE_MAPS_LINK, use_container_width=True)
 
     pesan_cepat = urllib.parse.quote("Halo GOBENG, saya ingin tanya layanan bengkel.")
-    st.link_button(
-        "💬 WHATSAPP BENGKEL",
-        f"https://wa.me/{NO_WA_BENGKEL}?text={pesan_cepat}",
-        use_container_width=True
-    )
+    st.link_button("💬 WHATSAPP BENGKEL", f"https://wa.me/{NO_WA_BENGKEL}?text={pesan_cepat}", use_container_width=True)
+
+    st.link_button("📞 TELEPON BENGKEL", f"tel:{NO_TELP_BENGKEL}", use_container_width=True)
 
     st.markdown("## 🛠 Layanan GOBENG")
     st.write("""
@@ -289,6 +341,50 @@ elif menu == "📍 Info Bengkel":
 ✅ Lihat lokasi bengkel  
 ✅ Hubungi mekanik lebih cepat  
 """)
+
+
+# =========================
+# ORDER MASUK
+# =========================
+
+elif menu == "📋 Order Masuk":
+    st.markdown("## 📋 Order Masuk GOBENG")
+
+    data = baca_order()
+
+    if data.empty:
+        st.info("Belum ada order masuk.")
+    else:
+        data_tampil = data.sort_values(by="waktu", ascending=False)
+        st.dataframe(data_tampil, use_container_width=True)
+
+        csv = data_tampil.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "⬇️ Download Data Order CSV",
+            data=csv,
+            file_name="order_gobeng.csv",
+            mime="text/csv"
+        )
+
+
+# =========================
+# STATISTIK
+# =========================
+
+elif menu == "📊 Statistik":
+    st.markdown("## 📊 Statistik GOBENG")
+
+    data = baca_order()
+
+    total_order = len(data)
+    menunggu = len(data[data["status"] == "Menunggu"]) if not data.empty else 0
+
+    col1, col2 = st.columns(2)
+    col1.metric("Total Order", total_order)
+    col2.metric("Order Menunggu", menunggu)
+
+    st.info("Statistik ini membantu melihat apakah QR banner mulai menghasilkan pelanggan.")
+
 
 # =========================
 # QR CODE
@@ -303,10 +399,7 @@ elif menu == "📱 QR Code Banner":
     </div>
     """, unsafe_allow_html=True)
 
-    link_input = st.text_input(
-        "Link GOBENG untuk QR",
-        value=LINK_GOBENG
-    )
+    link_input = st.text_input("Link GOBENG untuk QR", value=LINK_GOBENG)
 
     qr_img = buat_qr(link_input)
 
@@ -315,11 +408,12 @@ elif menu == "📱 QR Code Banner":
     st.download_button(
         label="⬇️ DOWNLOAD QR CODE PNG",
         data=qr_img,
-        file_name="qr_gobeng_v8_1_pro.png",
+        file_name="qr_gobeng_v9_pro.png",
         mime="image/png"
     )
 
     st.success("QR ini bisa dipasang di banner: MOTOR MOGOK? GOBENG-IN AJA!")
 
+
 st.divider()
-st.caption("GOBENG V8.1 Pro | Solusi Cepat Saat Kendaraan Bermasalah")
+st.caption("GOBENG V9 Pro | Jasund Motor | Solusi Cepat Saat Kendaraan Bermasalah")
