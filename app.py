@@ -6,32 +6,32 @@ from io import BytesIO
 from datetime import datetime
 
 # =========================
-# GOBENG V8 PRO
+# GOBENG V8.1 PRO
 # =========================
 
 NAMA_APP = "GOBENG"
 SLOGAN = "Motor Mogok? GOBENG-IN AJA!"
 
 NAMA_BENGKEL = "Jasund Motor"
-ALAMAT_BENGKEL = "kp caringin, RT./RW/RW.005/005, Sukasari, Kec. Karangtengah, Kabupaten Cianjur, Jawa Barat 43281"
+ALAMAT_BENGKEL = "Kp Caringin RT/RW 005/005, Sukasari, Kec. Karangtengah, Kabupaten Cianjur, Jawa Barat 43281"
 JAM_OPERASIONAL = "07.00 - 20.00 WIB"
 
-NO_WA_BENGKEL = "+62 856-2287-257"
-GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/z8eMg2nb51No7Pdk6"
+NO_WA_BENGKEL = "628562287257"
+GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/28eMg2nb51No7Pdk6"
 
-# isi dengan link website GOBENG yang online
+# Ganti dengan link website GOBENG yang sudah online
 LINK_GOBENG = "https://gobeng.streamlit.app"
 
 # Telegram
-TELEGRAM_BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tYM"
+TELEGRAM_BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
 TELEGRAM_CHAT_ID = "8951538688"
 
 
 def kirim_telegram(pesan):
-    if TELEGRAM_BOT_TOKEN == "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tYM":
+    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
         return
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY}/sendMessage"
     data = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": pesan,
@@ -40,7 +40,7 @@ def kirim_telegram(pesan):
 
     try:
         requests.post(url, data=data, timeout=10)
-    except:
+    except Exception:
         pass
 
 
@@ -68,12 +68,11 @@ def buat_qr(link):
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-
     return buffer
 
 
 st.set_page_config(
-    page_title="GOBENG V8 Pro",
+    page_title="GOBENG V8.1 Pro",
     page_icon="🔧",
     layout="centered"
 )
@@ -81,41 +80,104 @@ st.set_page_config(
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(180deg, #000000, #1a1a1a);
+    background: linear-gradient(180deg, #000000, #151515);
     color: white;
 }
+
+[data-testid="stSidebar"] {
+    background-color: #f2f2f2;
+}
+
+label, .stTextInput label, .stTextArea label, .stSelectbox label {
+    color: white !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+}
+
+input, textarea, select {
+    color: black !important;
+    background-color: white !important;
+}
+
 .logo {
-    font-size: 52px;
+    font-size: 56px;
     font-weight: 900;
     color: #ffcc00;
     text-align: center;
+    margin-bottom: 0px;
 }
+
 .slogan {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 25px;
+    font-weight: 800;
     color: white;
     text-align: center;
+    margin-bottom: 25px;
 }
+
+.hero {
+    background: linear-gradient(135deg, #330000, #111111);
+    padding: 25px;
+    border-radius: 22px;
+    border: 3px solid #ffcc00;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.hero-title {
+    color: #ff3333;
+    font-size: 34px;
+    font-weight: 900;
+}
+
+.hero-sub {
+    color: white;
+    font-size: 24px;
+    font-weight: 800;
+}
+
 .card {
-    background-color: #111111;
-    padding: 20px;
+    background-color: #101010;
+    padding: 22px;
     border-radius: 18px;
     border: 2px solid #ffcc00;
     margin-bottom: 20px;
 }
-.big-warning {
-    font-size: 30px;
+
+.service-box {
+    background-color: #222;
+    padding: 15px;
+    border-radius: 14px;
+    border: 1px solid #444;
+    margin-bottom: 10px;
+}
+
+div.stButton > button {
+    width: 100%;
+    background-color: #ff3333;
+    color: white;
+    font-size: 22px;
     font-weight: 900;
-    color: #ff3333;
-    text-align: center;
+    border-radius: 14px;
+    border: none;
+    padding: 15px;
+}
+
+div.stDownloadButton > button {
+    width: 100%;
+    background-color: #ffcc00;
+    color: black;
+    font-size: 18px;
+    font-weight: 900;
+    border-radius: 12px;
+    border: none;
+    padding: 12px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="logo">🔧 GOBENG</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="slogan">{SLOGAN}</div>', unsafe_allow_html=True)
-
-st.divider()
 
 menu = st.sidebar.radio(
     "Menu GOBENG",
@@ -127,13 +189,17 @@ menu = st.sidebar.radio(
 )
 
 # =========================
-# MENU BANTUAN MOGOK
+# BANTUAN MOGOK
 # =========================
 
 if menu == "🚨 Bantuan Mogok":
-    st.markdown('<div class="big-warning">🚨 MOTOR MOGOK?</div>', unsafe_allow_html=True)
-    st.markdown("### Tidak perlu dorong motor lagi.")
-    st.write("Isi data di bawah ini, lalu hubungi bengkel melalui WhatsApp.")
+    st.markdown("""
+    <div class="hero">
+        <div class="hero-title">🚨 MOTOR MOGOK?</div>
+        <div class="hero-sub">Tidak perlu dorong motor lagi!</div>
+        <p>Isi data di bawah ini, lalu lanjut WhatsApp bengkel.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     nama = st.text_input("Nama pelanggan")
     lokasi = st.text_input("Lokasi motor mogok")
@@ -155,7 +221,7 @@ if menu == "🚨 Bantuan Mogok":
         placeholder="Contoh: motor mati di pinggir jalan dekat minimarket..."
     )
 
-    if st.button("🚨 Minta Bantuan Sekarang"):
+    if st.button("🚨 MINTA BANTUAN SEKARANG"):
         if nama.strip() == "" or lokasi.strip() == "":
             st.warning("Nama dan lokasi wajib diisi.")
         else:
@@ -166,7 +232,7 @@ if menu == "🚨 Bantuan Mogok":
             waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             pesan_telegram = f"""
-🚨 <b>ORDER BARU GOBENG V8 PRO</b>
+🚨 <b>ORDER BARU GOBENG V8.1 PRO</b>
 
 👤 Nama: {nama}
 📍 Lokasi: {lokasi}
@@ -179,34 +245,38 @@ Segera cek pelanggan.
 
             st.success("Data berhasil masuk ke GOBENG.")
             st.link_button(
-                "💬 Lanjut Chat WhatsApp Bengkel",
-                buat_link_wa(nama, lokasi, keluhan_lengkap)
+                "💬 LANJUT CHAT WHATSAPP BENGKEL",
+                buat_link_wa(nama, lokasi, keluhan_lengkap),
+                use_container_width=True
             )
 
+    st.markdown("### 🛠 Bantuan yang tersedia")
+    st.markdown("""
+    <div class="service-box">✅ Motor mogok</div>
+    <div class="service-box">✅ Ban kempes / bocor</div>
+    <div class="service-box">✅ Aki tekor / soak</div>
+    <div class="service-box">✅ Mesin bermasalah</div>
+    """, unsafe_allow_html=True)
+
 # =========================
-# MENU INFO BENGKEL
+# INFO BENGKEL
 # =========================
 
 elif menu == "📍 Info Bengkel":
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("## 📍 Informasi Bengkel")
+    st.write(f"**{NAMA_BENGKEL}**")
+    st.write(f"📍 {ALAMAT_BENGKEL}")
+    st.write(f"⏰ Jam Operasional: {JAM_OPERASIONAL}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.info(f"""
-**{NAMA_BENGKEL}**
+    st.link_button("📍 BUKA GOOGLE MAPS", GOOGLE_MAPS_LINK, use_container_width=True)
 
-📍 {ALAMAT_BENGKEL}
-
-⏰ Jam Operasional: {JAM_OPERASIONAL}
-""")
-
-    st.link_button("📍 Buka Google Maps", GOOGLE_MAPS_LINK)
-
-    pesan_cepat = urllib.parse.quote(
-        "Halo GOBENG, saya ingin tanya layanan bengkel."
-    )
-
+    pesan_cepat = urllib.parse.quote("Halo GOBENG, saya ingin tanya layanan bengkel.")
     st.link_button(
-        "💬 WhatsApp Bengkel",
-        f"https://wa.me/{NO_WA_BENGKEL}?text={pesan_cepat}"
+        "💬 WHATSAPP BENGKEL",
+        f"https://wa.me/{NO_WA_BENGKEL}?text={pesan_cepat}",
+        use_container_width=True
     )
 
     st.markdown("## 🛠 Layanan GOBENG")
@@ -221,12 +291,17 @@ elif menu == "📍 Info Bengkel":
 """)
 
 # =========================
-# MENU QR CODE
+# QR CODE
 # =========================
 
 elif menu == "📱 QR Code Banner":
-    st.markdown("## 📱 QR Code GOBENG")
-    st.write("QR ini untuk banner dan stiker. Saat discan, pelanggan masuk dulu ke aplikasi GOBENG.")
+    st.markdown("""
+    <div class="hero">
+        <div class="hero-title">📱 QR CODE GOBENG</div>
+        <div class="hero-sub">Untuk banner dan stiker</div>
+        <p>Saat discan, pelanggan masuk dulu ke aplikasi GOBENG.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     link_input = st.text_input(
         "Link GOBENG untuk QR",
@@ -235,20 +310,16 @@ elif menu == "📱 QR Code Banner":
 
     qr_img = buat_qr(link_input)
 
-    st.image(
-        qr_img,
-        caption="QR Code GOBENG",
-        width=300
-    )
+    st.image(qr_img, caption="QR Code GOBENG", width=330)
 
     st.download_button(
-        label="⬇️ Download QR Code PNG",
+        label="⬇️ DOWNLOAD QR CODE PNG",
         data=qr_img,
-        file_name="qr_gobeng_v8_pro.png",
+        file_name="qr_gobeng_v8_1_pro.png",
         mime="image/png"
     )
 
-    st.success("Gunakan QR ini untuk banner: MOTOR MOGOK? GOBENG-IN AJA!")
+    st.success("QR ini bisa dipasang di banner: MOTOR MOGOK? GOBENG-IN AJA!")
 
 st.divider()
-st.caption("GOBENG V8 Pro | Solusi Cepat Saat Kendaraan Bermasalah")
+st.caption("GOBENG V8.1 Pro | Solusi Cepat Saat Kendaraan Bermasalah")
