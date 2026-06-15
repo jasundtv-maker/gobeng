@@ -8,7 +8,7 @@ from io import BytesIO
 from datetime import datetime
 
 # =========================
-# GOBENG V10
+# GOBENG V11 PRO
 # =========================
 
 NAMA_BENGKEL = "Jasund Motor"
@@ -29,18 +29,28 @@ TELEGRAM_CHAT_ID = "8951538688"
 
 
 def kirim_telegram(pesan):
-    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
-        return
-
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     data = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": pesan,
         "parse_mode": "HTML"
     }
-
     try:
         requests.post(url, data=data, timeout=10)
+    except Exception:
+        pass
+
+
+def kirim_foto_telegram(foto, caption):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    files = {"photo": foto}
+    data = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "caption": caption,
+        "parse_mode": "HTML"
+    }
+    try:
+        requests.post(url, data=data, files=files, timeout=15)
     except Exception:
         pass
 
@@ -56,15 +66,15 @@ Mohon segera dibantu."""
     return f"https://wa.me/{NO_WA_BENGKEL}?text={urllib.parse.quote(pesan)}"
 
 
-def simpan_order(nama, lokasi, keluhan):
+def simpan_order(nama, lokasi, keluhan, rating="-"):
     waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-
     data_baru = pd.DataFrame([{
         "waktu": waktu,
         "nama": nama,
         "lokasi": lokasi,
         "keluhan": keluhan,
-        "status": "Menunggu"
+        "status": "Menunggu",
+        "rating": rating
     }])
 
     if os.path.exists(ORDER_FILE):
@@ -80,14 +90,13 @@ def simpan_order(nama, lokasi, keluhan):
 def baca_order():
     if os.path.exists(ORDER_FILE):
         return pd.read_csv(ORDER_FILE)
-    return pd.DataFrame(columns=["waktu", "nama", "lokasi", "keluhan", "status"])
+    return pd.DataFrame(columns=["waktu", "nama", "lokasi", "keluhan", "status", "rating"])
 
 
 def buat_qr(link):
     qr = qrcode.QRCode(version=2, box_size=10, border=4)
     qr.add_data(link)
     qr.make(fit=True)
-
     img = qr.make_image(fill_color="black", back_color="white")
     buffer = BytesIO()
     img.save(buffer, format="PNG")
@@ -96,7 +105,7 @@ def buat_qr(link):
 
 
 st.set_page_config(
-    page_title="GOBENG V10",
+    page_title="GOBENG V11 Pro",
     page_icon="🔧",
     layout="centered"
 )
@@ -107,18 +116,15 @@ st.markdown("""
     background: linear-gradient(180deg, #000000, #151515);
     color: white;
 }
-
-label, .stTextInput label, .stTextArea label, .stSelectbox label {
+label, .stTextInput label, .stTextArea label, .stSelectbox label, .stSlider label {
     color: white !important;
     font-size: 17px !important;
     font-weight: 800 !important;
 }
-
 input, textarea, select {
     color: black !important;
     background-color: white !important;
 }
-
 .hero {
     background: linear-gradient(135deg, #3b0000, #111111);
     padding: 22px;
@@ -127,19 +133,16 @@ input, textarea, select {
     text-align: center;
     margin-bottom: 22px;
 }
-
 .hero-title {
     color: #ff3333;
     font-size: 36px;
     font-weight: 900;
 }
-
 .hero-sub {
     color: white;
     font-size: 24px;
     font-weight: 800;
 }
-
 .card {
     background-color: #101010;
     padding: 20px;
@@ -147,7 +150,6 @@ input, textarea, select {
     border: 2px solid #ffcc00;
     margin-bottom: 18px;
 }
-
 .info-card {
     background-color: #222222;
     padding: 16px;
@@ -155,7 +157,6 @@ input, textarea, select {
     margin-bottom: 12px;
     border: 1px solid #444;
 }
-
 div.stButton > button {
     width: 100%;
     background-color: #ff3333;
@@ -166,7 +167,6 @@ div.stButton > button {
     border: none;
     padding: 16px;
 }
-
 div.stDownloadButton > button {
     width: 100%;
     background-color: #ffcc00;
@@ -181,7 +181,7 @@ div.stDownloadButton > button {
 """, unsafe_allow_html=True)
 
 # =========================
-# HEADER PELANGGAN
+# HEADER
 # =========================
 
 if os.path.exists(BANNER_FILE):
@@ -199,7 +199,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# TOMBOL UTAMA PELANGGAN
+# TOMBOL CEPAT
 # =========================
 
 st.link_button(
@@ -223,7 +223,7 @@ st.link_button(
 st.divider()
 
 # =========================
-# FORM BANTUAN
+# FORM ORDER
 # =========================
 
 st.markdown("## 🚨 Form Bantuan GOBENG")
@@ -248,6 +248,11 @@ catatan = st.text_area(
     placeholder="Contoh: dekat minimarket, depan masjid, pinggir jalan..."
 )
 
+foto_kendaraan = st.file_uploader(
+    "Upload foto kendaraan / lokasi jika ada",
+    type=["jpg", "jpeg", "png"]
+)
+
 if st.button("🚨 MINTA BANTUAN SEKARANG"):
     if nama.strip() == "" or lokasi.strip() == "":
         st.warning("Nama dan lokasi/patokan wajib diisi.")
@@ -259,7 +264,7 @@ if st.button("🚨 MINTA BANTUAN SEKARANG"):
         waktu = simpan_order(nama, lokasi, keluhan_lengkap)
 
         pesan_telegram = f"""
-🚨 <b>ORDER BARU GOBENG V10</b>
+🚨 <b>ORDER BARU GOBENG V11</b>
 
 👤 Nama: {nama}
 📍 Lokasi/Patokan: {lokasi}
@@ -269,6 +274,16 @@ if st.button("🚨 MINTA BANTUAN SEKARANG"):
 Segera cek pelanggan.
 """
         kirim_telegram(pesan_telegram)
+
+        if foto_kendaraan is not None:
+            caption = f"""
+📸 <b>FOTO ORDER GOBENG</b>
+
+👤 Nama: {nama}
+📍 Lokasi: {lokasi}
+🛠 Keluhan: {keluhan_lengkap}
+"""
+            kirim_foto_telegram(foto_kendaraan, caption)
 
         st.success("Order berhasil masuk ke GOBENG.")
         st.link_button(
@@ -280,7 +295,34 @@ Segera cek pelanggan.
 st.divider()
 
 # =========================
-# INFO BENGKEL LANGSUNG DI HALAMAN
+# RATING PELANGGAN
+# =========================
+
+st.markdown("## ⭐ Rating Pelayanan")
+
+rating_nama = st.text_input("Nama untuk rating")
+rating = st.slider("Beri rating pelayanan Jasund Motor", 1, 5, 5)
+
+if st.button("⭐ KIRIM RATING"):
+    if rating_nama.strip() == "":
+        st.warning("Nama wajib diisi.")
+    else:
+        waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+        pesan_rating = f"""
+⭐ <b>RATING BARU GOBENG</b>
+
+👤 Nama: {rating_nama}
+⭐ Rating: {rating}/5
+⏰ Waktu: {waktu}
+"""
+        kirim_telegram(pesan_rating)
+        st.success("Terima kasih, rating berhasil dikirim.")
+
+st.divider()
+
+# =========================
+# INFO BENGKEL
 # =========================
 
 st.markdown("## 📍 Info Bengkel")
@@ -305,7 +347,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# ADMIN TERSEMBUNYI
+# ADMIN
 # =========================
 
 st.divider()
@@ -351,11 +393,11 @@ with st.expander("🔐 Admin GOBENG"):
             st.download_button(
                 "⬇️ Download QR Code",
                 data=qr_img,
-                file_name="qr_gobeng_v10.png",
+                file_name="qr_gobeng_v11.png",
                 mime="image/png"
             )
 
     elif password:
         st.error("Password salah.")
 
-st.caption("GOBENG V10 | Jasund Motor | Solusi Cepat Saat Kendaraan Bermasalah")
+st.caption("GOBENG V11 Pro | Jasund Motor | Solusi Cepat Saat Kendaraan Bermasalah")
