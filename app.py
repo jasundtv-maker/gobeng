@@ -255,7 +255,7 @@ if menu == "🚨 Bantuan Mogok":
     )
     catatan = st.text_area("Catatan tambahan", placeholder="Contoh: dekat minimarket, depan masjid, pinggir jalan...")
 
-       
+    link_lokasi = "Tidak menggunakan GPS"  
     if st.button("🚨 MINTA BANTUAN SEKARANG"):
         if nama.strip() == "" or lokasi.strip() == "":
             st.warning("Nama dan lokasi/patokan wajib diisi.")
