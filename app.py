@@ -18,7 +18,7 @@ JAM_OPERASIONAL = "07.00 - 20.00 WIB"
 NO_WA_BENGKEL = "628562287257"
 NO_TELP_BENGKEL = "08562287257"
 
-GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/YrMm3yYtWb6dV8ET8"
+GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/HG12k3keMSdLcsDw8"
 LINK_GOBENG = "https://gobeng.streamlit.app"
 
 BANNER_FILE = "banner_gobeng.png.png"
@@ -29,7 +29,7 @@ TELEGRAM_CHAT_ID = "8951538688"
 
 
 def kirim_telegram(pesan):
-    if TELEGRAM_BOT_TOKEN == "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY":
+    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
         return
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
