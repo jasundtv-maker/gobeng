@@ -176,7 +176,7 @@ div.stDownloadButton > button {
 }
 </style>
 """, unsafe_allow_html=True)
-
+st.image("banner_gobeng.png.png", use_container_width=True)
 st.markdown('<div class="logo">🔧 GOBENG</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="slogan">{SLOGAN}</div>', unsafe_allow_html=True)
 
