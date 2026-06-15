@@ -2,3 +2,5 @@ streamlit
 requests
 qrcode
 pillow
+streamlit-js-eval
+pandas
