@@ -255,33 +255,7 @@ if menu == "🚨 Bantuan Mogok":
     )
     catatan = st.text_area("Catatan tambahan", placeholder="Contoh: dekat minimarket, depan masjid, pinggir jalan...")
 
-   st.markdown("### 📍 Lokasi GPS Otomatis")
-
-if "link_lokasi" not in st.session_state:
-    st.session_state.link_lokasi = "Tidak menggunakan GPS"
-
-if st.button("📍 AMBIL LOKASI SAYA"):
-    if get_geolocation is not None:
-        lokasi_gps = get_geolocation()
-
-        if lokasi_gps and "coords" in lokasi_gps:
-            lat = lokasi_gps["coords"]["latitude"]
-            lon = lokasi_gps["coords"]["longitude"]
-
-            st.session_state.link_lokasi = f"https://maps.google.com/?q={lat},{lon}"
-            st.success("✅ Lokasi GPS berhasil diambil.")
-            st.write(st.session_state.link_lokasi)
-        else:
-            st.warning("GPS belum terbaca. Jika muncul izin lokasi, klik Izinkan lalu tekan tombol ini lagi.")
-    else:
-        st.warning("Fitur GPS belum aktif. Cek requirements.txt.")
-
-link_lokasi = st.session_state.link_lokasi
-
-if link_lokasi != "Tidak menggunakan GPS":
-    st.success("📍 Lokasi GPS siap dikirim ke WhatsApp dan Telegram.")
-else:
-    st.info("GPS belum diambil. Jika tidak sempat, order tetap bisa dikirim memakai patokan lokasi.")
+       
     if st.button("🚨 MINTA BANTUAN SEKARANG"):
         if nama.strip() == "" or lokasi.strip() == "":
             st.warning("Nama dan lokasi/patokan wajib diisi.")
