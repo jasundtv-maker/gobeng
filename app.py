@@ -28,10 +28,9 @@ TELEGRAM_CHAT_ID = "8951538688"
 
 
 def kirim_telegram(pesan):
-    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
-        return
 
-    url = f"https://api.telegram.org/bot{8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
     data = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": pesan,
@@ -42,6 +41,8 @@ def kirim_telegram(pesan):
         requests.post(url, data=data, timeout=10)
     except Exception:
         pass
+
+    
 
 
 def buat_link_wa(nama, lokasi, keluhan):
