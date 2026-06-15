@@ -8,7 +8,7 @@ from io import BytesIO
 from datetime import datetime
 
 # =========================
-# GOBENG V11 PRO
+# GOBENG V12 PRO
 # =========================
 
 NAMA_BENGKEL = "Jasund Motor"
@@ -18,7 +18,7 @@ JAM_OPERASIONAL = "07.00 - 20.00 WIB"
 NO_WA_BENGKEL = "628562287257"
 NO_TELP_BENGKEL = "08562287257"
 
-GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/HG12k3keMSdLcsDw8"
+GOOGLE_MAPS_LINK = "https://maps.app.goo.gl/YrMm3yYtWb6dV8ET8"
 LINK_GOBENG = "https://gobeng.streamlit.app"
 
 BANNER_FILE = "banner_gobeng.png.png"
@@ -27,14 +27,21 @@ ORDER_FILE = "orders_gobeng.csv"
 TELEGRAM_BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
 TELEGRAM_CHAT_ID = "8951538688"
 
+STATUS_LIST = ["Menunggu", "Diproses", "Menuju Lokasi", "Sedang Dikerjakan", "Selesai"]
+
 
 def kirim_telegram(pesan):
+    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
+        return
+
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
     data = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": pesan,
         "parse_mode": "HTML"
     }
+
     try:
         requests.post(url, data=data, timeout=10)
     except Exception:
@@ -42,22 +49,88 @@ def kirim_telegram(pesan):
 
 
 def kirim_foto_telegram(foto, caption):
+    if TELEGRAM_BOT_TOKEN == "ISI_TOKEN_TELEGRAM_KAMU":
+        return
+
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-    files = {"photo": foto}
-    data = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "caption": caption,
-        "parse_mode": "HTML"
-    }
+
     try:
+        foto.seek(0)
+        files = {"photo": foto}
+        data = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "caption": caption,
+            "parse_mode": "HTML"
+        }
         requests.post(url, data=data, files=files, timeout=15)
     except Exception:
         pass
 
 
-def buat_link_wa(nama, lokasi, keluhan):
+def baca_order():
+    kolom = ["order_id", "waktu", "nama", "lokasi", "keluhan", "status", "rating"]
+
+    if os.path.exists(ORDER_FILE):
+        data = pd.read_csv(ORDER_FILE)
+
+        for k in kolom:
+            if k not in data.columns:
+                if k == "order_id":
+                    data[k] = [f"GOB-{i+1:04d}" for i in range(len(data))]
+                elif k == "status":
+                    data[k] = "Menunggu"
+                elif k == "rating":
+                    data[k] = "-"
+                else:
+                    data[k] = "-"
+
+        data = data[kolom]
+        data.to_csv(ORDER_FILE, index=False)
+        return data
+
+    return pd.DataFrame(columns=kolom)
+
+
+def nomor_order_baru():
+    data = baca_order()
+    nomor = len(data) + 1
+    return f"GOB-{nomor:04d}"
+
+
+def simpan_order(nama, lokasi, keluhan):
+    data = baca_order()
+
+    order_id = nomor_order_baru()
+    waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+    data_baru = pd.DataFrame([{
+        "order_id": order_id,
+        "waktu": waktu,
+        "nama": nama,
+        "lokasi": lokasi,
+        "keluhan": keluhan,
+        "status": "Menunggu",
+        "rating": "-"
+    }])
+
+    data = pd.concat([data, data_baru], ignore_index=True)
+    data.to_csv(ORDER_FILE, index=False)
+
+    return order_id, waktu
+
+
+def update_status_order(order_id, status_baru):
+    data = baca_order()
+
+    if not data.empty:
+        data.loc[data["order_id"] == order_id, "status"] = status_baru
+        data.to_csv(ORDER_FILE, index=False)
+
+
+def buat_link_wa(nama, lokasi, keluhan, order_id):
     pesan = f"""Halo {NAMA_BENGKEL}, saya butuh bantuan dari GOBENG.
 
+Nomor Order: {order_id}
 Nama: {nama}
 Lokasi/Patokan: {lokasi}
 Keluhan: {keluhan}
@@ -66,37 +139,11 @@ Mohon segera dibantu."""
     return f"https://wa.me/{NO_WA_BENGKEL}?text={urllib.parse.quote(pesan)}"
 
 
-def simpan_order(nama, lokasi, keluhan, rating="-"):
-    waktu = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    data_baru = pd.DataFrame([{
-        "waktu": waktu,
-        "nama": nama,
-        "lokasi": lokasi,
-        "keluhan": keluhan,
-        "status": "Menunggu",
-        "rating": rating
-    }])
-
-    if os.path.exists(ORDER_FILE):
-        data_lama = pd.read_csv(ORDER_FILE)
-        data = pd.concat([data_lama, data_baru], ignore_index=True)
-    else:
-        data = data_baru
-
-    data.to_csv(ORDER_FILE, index=False)
-    return waktu
-
-
-def baca_order():
-    if os.path.exists(ORDER_FILE):
-        return pd.read_csv(ORDER_FILE)
-    return pd.DataFrame(columns=["waktu", "nama", "lokasi", "keluhan", "status", "rating"])
-
-
 def buat_qr(link):
     qr = qrcode.QRCode(version=2, box_size=10, border=4)
     qr.add_data(link)
     qr.make(fit=True)
+
     img = qr.make_image(fill_color="black", back_color="white")
     buffer = BytesIO()
     img.save(buffer, format="PNG")
@@ -105,7 +152,7 @@ def buat_qr(link):
 
 
 st.set_page_config(
-    page_title="GOBENG V11 Pro",
+    page_title="GOBENG V12 Pro",
     page_icon="🔧",
     layout="centered"
 )
@@ -156,6 +203,13 @@ input, textarea, select {
     border-radius: 14px;
     margin-bottom: 12px;
     border: 1px solid #444;
+}
+.status-box {
+    background-color: #111111;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #ffcc00;
+    margin-bottom: 16px;
 }
 div.stButton > button {
     width: 100%;
@@ -261,14 +315,16 @@ if st.button("🚨 MINTA BANTUAN SEKARANG"):
         if catatan.strip():
             keluhan_lengkap += f" - {catatan}"
 
-        waktu = simpan_order(nama, lokasi, keluhan_lengkap)
+        order_id, waktu = simpan_order(nama, lokasi, keluhan_lengkap)
 
         pesan_telegram = f"""
-🚨 <b>ORDER BARU GOBENG V11</b>
+🚨 <b>ORDER BARU GOBENG V12</b>
 
+🧾 Nomor Order: <b>{order_id}</b>
 👤 Nama: {nama}
 📍 Lokasi/Patokan: {lokasi}
 🛠 Keluhan: {keluhan_lengkap}
+📌 Status: Menunggu
 ⏰ Waktu: {waktu}
 
 Segera cek pelanggan.
@@ -279,16 +335,17 @@ Segera cek pelanggan.
             caption = f"""
 📸 <b>FOTO ORDER GOBENG</b>
 
+🧾 Nomor Order: {order_id}
 👤 Nama: {nama}
 📍 Lokasi: {lokasi}
 🛠 Keluhan: {keluhan_lengkap}
 """
             kirim_foto_telegram(foto_kendaraan, caption)
 
-        st.success("Order berhasil masuk ke GOBENG.")
+        st.success(f"Order berhasil masuk ke GOBENG. Nomor Order: {order_id}")
         st.link_button(
             "💬 LANJUT CHAT WHATSAPP BENGKEL",
-            buat_link_wa(nama, lokasi, keluhan_lengkap),
+            buat_link_wa(nama, lokasi, keluhan_lengkap, order_id),
             use_container_width=True
         )
 
@@ -302,6 +359,7 @@ st.markdown("## ⭐ Rating Pelayanan")
 
 rating_nama = st.text_input("Nama untuk rating")
 rating = st.slider("Beri rating pelayanan Jasund Motor", 1, 5, 5)
+rating_pesan = st.text_area("Komentar / testimoni", placeholder="Contoh: Pelayanan cepat, motor langsung hidup...")
 
 if st.button("⭐ KIRIM RATING"):
     if rating_nama.strip() == "":
@@ -314,6 +372,7 @@ if st.button("⭐ KIRIM RATING"):
 
 👤 Nama: {rating_nama}
 ⭐ Rating: {rating}/5
+💬 Komentar: {rating_pesan if rating_pesan.strip() else "-"}
 ⏰ Waktu: {waktu}
 """
         kirim_telegram(pesan_rating)
@@ -356,7 +415,12 @@ with st.expander("🔐 Admin GOBENG"):
     password = st.text_input("Password Admin", type="password")
 
     if password == "admin123":
-        tab1, tab2, tab3 = st.tabs(["📋 Order Masuk", "📊 Statistik", "📱 QR Code"])
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "📋 Order Masuk",
+            "🔄 Ubah Status",
+            "📊 Statistik",
+            "📱 QR Code"
+        ])
 
         with tab1:
             st.markdown("### 📋 Order Masuk")
@@ -365,27 +429,91 @@ with st.expander("🔐 Admin GOBENG"):
             if data.empty:
                 st.info("Belum ada order.")
             else:
-                st.dataframe(data.sort_values(by="waktu", ascending=False), use_container_width=True)
+                st.dataframe(
+                    data.sort_values(by="waktu", ascending=False),
+                    use_container_width=True
+                )
 
                 csv = data.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "⬇️ Download Order CSV",
                     data=csv,
-                    file_name="order_gobeng.csv",
+                    file_name="order_gobeng_v12.csv",
                     mime="text/csv"
                 )
 
         with tab2:
+            st.markdown("### 🔄 Ubah Status Order")
+            data = baca_order()
+
+            if data.empty:
+                st.info("Belum ada order untuk diubah.")
+            else:
+                daftar_order = data["order_id"].tolist()
+
+                pilih_order = st.selectbox("Pilih Nomor Order", daftar_order)
+
+                detail = data[data["order_id"] == pilih_order].iloc[0]
+
+                st.markdown(f"""
+                <div class="status-box">
+                    <b>Nomor Order:</b> {detail["order_id"]}<br>
+                    <b>Nama:</b> {detail["nama"]}<br>
+                    <b>Lokasi:</b> {detail["lokasi"]}<br>
+                    <b>Keluhan:</b> {detail["keluhan"]}<br>
+                    <b>Status Sekarang:</b> {detail["status"]}
+                </div>
+                """, unsafe_allow_html=True)
+
+                status_baru = st.selectbox(
+                    "Pilih Status Baru",
+                    STATUS_LIST,
+                    index=STATUS_LIST.index(detail["status"]) if detail["status"] in STATUS_LIST else 0
+                )
+
+                if st.button("✅ SIMPAN STATUS ORDER"):
+                    update_status_order(pilih_order, status_baru)
+
+                    pesan_status = f"""
+🔄 <b>STATUS ORDER GOBENG DIPERBARUI</b>
+
+🧾 Nomor Order: {pilih_order}
+👤 Nama: {detail["nama"]}
+📍 Lokasi: {detail["lokasi"]}
+🛠 Keluhan: {detail["keluhan"]}
+📌 Status Baru: <b>{status_baru}</b>
+⏰ Waktu Update: {datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+"""
+                    kirim_telegram(pesan_status)
+
+                    st.success(f"Status {pilih_order} berhasil diubah menjadi {status_baru}.")
+                    st.rerun()
+
+        with tab3:
             st.markdown("### 📊 Statistik")
             data = baca_order()
+
             total = len(data)
             menunggu = len(data[data["status"] == "Menunggu"]) if not data.empty else 0
+            diproses = len(data[data["status"] == "Diproses"]) if not data.empty else 0
+            menuju = len(data[data["status"] == "Menuju Lokasi"]) if not data.empty else 0
+            selesai = len(data[data["status"] == "Selesai"]) if not data.empty else 0
 
             col1, col2 = st.columns(2)
             col1.metric("Total Order", total)
             col2.metric("Menunggu", menunggu)
 
-        with tab3:
+            col3, col4 = st.columns(2)
+            col3.metric("Diproses/Menuju", diproses + menuju)
+            col4.metric("Selesai", selesai)
+
+            if not data.empty:
+                st.markdown("### Ringkasan Status")
+                ringkasan = data["status"].value_counts().reset_index()
+                ringkasan.columns = ["Status", "Jumlah"]
+                st.dataframe(ringkasan, use_container_width=True)
+
+        with tab4:
             st.markdown("### 📱 QR Code GOBENG")
             qr_img = buat_qr(LINK_GOBENG)
             st.image(qr_img, width=300)
@@ -393,11 +521,11 @@ with st.expander("🔐 Admin GOBENG"):
             st.download_button(
                 "⬇️ Download QR Code",
                 data=qr_img,
-                file_name="qr_gobeng_v11.png",
+                file_name="qr_gobeng_v12.png",
                 mime="image/png"
             )
 
     elif password:
         st.error("Password salah.")
 
-st.caption("GOBENG V11 Pro | Jasund Motor | Solusi Cepat Saat Kendaraan Bermasalah")
+st.caption("GOBENG V12 Pro | Jasund Motor | Solusi Cepat Saat Kendaraan Bermasalah")
