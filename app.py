@@ -24,7 +24,7 @@ LINK_GOBENG = "https://gobeng.streamlit.app"
 BANNER_FILE = "banner_gobeng.png.png"
 ORDER_FILE = "orders_gobeng.csv"
 
-TELEGRAM_BOT_TOKEN = "ISI_TOKEN_TELEGRAM_KAMU"
+TELEGRAM_BOT_TOKEN = "8742663611:AAE4hrUYrM8gagxr9qQCPd2N71TH9czF3tY"
 TELEGRAM_CHAT_ID = "8951538688"
 
 
